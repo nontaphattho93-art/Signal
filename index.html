@@ -151,11 +151,23 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
 .live { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 500; }
 .live[disabled] { opacity: 0.6; cursor: default; }
 #liveMsg { min-height: 1.5em; }
+
+.seg.two { grid-template-columns: repeat(2, 1fr); }
+.cu { fill: var(--up); stroke: var(--up); stroke-width: 1; }
+.cd { fill: var(--down); stroke: var(--down); stroke-width: 1; }
+rect.cu, rect.cd { stroke: none; }
+.hb { opacity: 0.85; }
+.lastline { stroke: var(--fg); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.5; fill: none; }
+.tag-up { fill: var(--up); }
+.tag-dn { fill: var(--down); }
+.tagtxt { fill: var(--bg); font-family: var(--font-data); font-size: 10px; font-weight: 500; }
+.ptitle { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
+.panel { fill: none; stroke: var(--line); stroke-width: 1; }
+.grid.dash { stroke-dasharray: 3 3; }
+.l-rsi { stroke: var(--accent); stroke-width: 1.3; fill: none; }
 </style>
 </head>
 <body>
-
-
 <main>
   <header class="top">
     <div>
@@ -167,8 +179,22 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
 
   <p class="banner" id="banner" data-live="false">กำลังโหลดราคา ETH จริง...</p>
 
+  <section class="card">
+    <div class="seg two" role="group" aria-label="กรอบเวลา" id="tfSeg">
+      <button type="button" data-tf="1m" aria-pressed="true">แท่งเทียน 1 นาที</button>
+      <button type="button" data-tf="1d" aria-pressed="false">รายวัน</button>
+    </div>
+    <div class="seg" hidden role="group" aria-label="เลือกสถานการณ์ตัวอย่าง" id="seg">
+      <button type="button" data-k="up" aria-pressed="true">ขาขึ้น</button>
+      <button type="button" data-k="side" aria-pressed="false">แกว่งตัว</button>
+      <button type="button" data-k="down" aria-pressed="false">ขาลง</button>
+    </div>
+    <div class="chart-wrap"><svg id="chart" viewBox="0 0 400 366" role="img" aria-label="กราฟราคา ETH"></svg></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
   <section class="card signal" id="signalCard" aria-live="polite">
-    <p class="label">สัญญาณวันนี้</p>
+    <p class="label" id="sigLabel">สัญญาณ</p>
     <div class="verdict">
       <div>
         <p class="word" id="word">–</p>
@@ -182,35 +208,25 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
   </section>
 
   <section class="card">
-    <div class="seg" hidden role="group" aria-label="เลือกสถานการณ์ตัวอย่าง" id="seg">
-      <button type="button" data-k="up" aria-pressed="true">ขาขึ้น</button>
-      <button type="button" data-k="side" aria-pressed="false">แกว่งตัว</button>
-      <button type="button" data-k="down" aria-pressed="false">ขาลง</button>
-    </div>
-    <div class="chart-wrap"><svg id="chart" viewBox="0 0 400 230" role="img" aria-label="กราฟราคาย้อนหลัง พร้อมเส้นค่าเฉลี่ย 50 และ 200 วัน"></svg></div>
-    <div class="legend"><span class="a">ราคา</span><span class="b">เฉลี่ย 50 วัน</span><span class="c">เฉลี่ย 200 วัน</span></div>
-  </section>
-
-  <section class="card">
     <div class="stats">
       <div class="stat"><span class="v num" id="sRsi">–</span><span class="n">RSI (14)</span></div>
       <div class="stat"><span class="v num" id="sMacd">–</span><span class="n">MACD hist.</span></div>
-      <div class="stat"><span class="v num" id="sGap">–</span><span class="n">ห่างเฉลี่ย 50 วัน</span></div>
+      <div class="stat"><span class="v num" id="sGap">–</span><span class="n" id="sGapLbl">ห่างเฉลี่ย 50</span></div>
     </div>
   </section>
 
   <section class="foot">
-    <p>สัญญาณคำนวณจากกฎตายตัว 4 ข้อ (ค่าเฉลี่ย 50/200 วัน, ราคาเทียบเฉลี่ย 50 วัน, RSI, MACD) ข้อละ +1 / 0 / −1 ใช้ประกอบการตัดสินใจเท่านั้น ไม่ใช่คำแนะนำซื้อขาย และพลาดได้บ่อยในตลาดที่ไม่มีทิศทาง</p>
-    <button type="button" class="live" id="liveBtn">รีเฟรชราคา</button>
-    
+    <p>สัญญาณคำนวณจากกฎตายตัว 4 ข้อ (เฉลี่ย 50/200 แท่ง, ราคาเทียบเฉลี่ย 50 แท่ง, RSI, MACD) ข้อละ +1 / 0 / −1 บนกรอบเวลาที่เลือก กราฟ 1 นาทีแกว่งและเปลี่ยนสัญญาณบ่อยกว่ารายวันมาก ใช้ประกอบการตัดสินใจเท่านั้น ไม่ใช่คำแนะนำซื้อขาย</p>
+    <button type="button" class="live" id="liveBtn">รีเฟรชข้อมูล</button>
   </section>
 </main>
 
 <script>
 (function () {
   "use strict";
+  var $ = function (id) { return document.getElementById(id); };
 
-  /* ---------- sample data (clearly simulated) ---------- */
+  /* ---------- sample data (daily view only, used when real data cannot load) ---------- */
   function mulberry32(a) {
     return function () {
       a |= 0; a = (a + 0x6D2B79F5) | 0;
@@ -255,42 +271,49 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     for (var i = 1; i < a.length; i++) out.push(a[i] * k + out[i - 1] * (1 - k));
     return out;
   }
-  function rsiLast(a, n) {
-    var gain = 0, loss = 0, i;
+  function rsiSeries(a, n) {
+    var out = [], i;
+    for (i = 0; i < a.length; i++) out.push(null);
+    if (a.length <= n) return out;
+    var gain = 0, loss = 0;
     for (i = 1; i <= n; i++) {
       var d = a[i] - a[i - 1];
       if (d >= 0) gain += d; else loss -= d;
     }
     gain /= n; loss /= n;
+    out[n] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
     for (i = n + 1; i < a.length; i++) {
       var dd = a[i] - a[i - 1];
       gain = (gain * (n - 1) + (dd > 0 ? dd : 0)) / n;
       loss = (loss * (n - 1) + (dd < 0 ? -dd : 0)) / n;
+      out[i] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
     }
-    if (loss === 0) return 100;
-    return 100 - 100 / (1 + gain / loss);
+    return out;
   }
-  function macdHist(a) {
-    var e12 = emaSeries(a, 12), e26 = emaSeries(a, 26), m = [];
-    for (var i = 0; i < a.length; i++) m.push(e12[i] - e26[i]);
+  function macdHistSeries(a) {
+    var e12 = emaSeries(a, 12), e26 = emaSeries(a, 26), m = [], h = [], i;
+    for (i = 0; i < a.length; i++) m.push(e12[i] - e26[i]);
     var sig = emaSeries(m, 9);
-    return m[m.length - 1] - sig[sig.length - 1];
+    for (i = 0; i < a.length; i++) h.push(m[i] - sig[i]);
+    return h;
   }
   function fmt(x, d) {
     return x.toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
   }
-  function analyze(prices) {
+  function signed(n) { return (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n); }
+
+  function analyze(prices, unit) {
     var s50 = smaSeries(prices, 50), s200 = smaSeries(prices, 200);
-    var last = prices[prices.length - 1];
-    var ma50 = s50[s50.length - 1], ma200 = s200[s200.length - 1];
-    var rsi = rsiLast(prices, 14), hist = macdHist(prices);
+    var rs = rsiSeries(prices, 14), hs = macdHistSeries(prices);
+    var n = prices.length - 1;
+    var last = prices[n], ma50 = s50[n], ma200 = s200[n], rsi = rs[n], hist = hs[n];
     var votes = [];
     votes.push(ma50 > ma200
-      ? { v: 1, t: "เฉลี่ย 50 วัน อยู่เหนือเฉลี่ย 200 วัน แนวโน้มระยะกลางเป็นขาขึ้น" }
-      : { v: -1, t: "เฉลี่ย 50 วัน อยู่ต่ำกว่าเฉลี่ย 200 วัน แนวโน้มระยะกลางเป็นขาลง" });
+      ? { v: 1, t: "เฉลี่ย 50 " + unit + " อยู่เหนือเฉลี่ย 200 " + unit + " แนวโน้มเป็นขาขึ้น" }
+      : { v: -1, t: "เฉลี่ย 50 " + unit + " อยู่ต่ำกว่าเฉลี่ย 200 " + unit + " แนวโน้มเป็นขาลง" });
     votes.push(last > ma50
-      ? { v: 1, t: "ราคาปัจจุบันอยู่เหนือเฉลี่ย 50 วัน" }
-      : { v: -1, t: "ราคาปัจจุบันอยู่ต่ำกว่าเฉลี่ย 50 วัน" });
+      ? { v: 1, t: "ราคาปัจจุบันอยู่เหนือเฉลี่ย 50 " + unit }
+      : { v: -1, t: "ราคาปัจจุบันอยู่ต่ำกว่าเฉลี่ย 50 " + unit });
     if (rsi > 55) votes.push({ v: 1, t: "RSI " + rsi.toFixed(0) + " แรงซื้อเด่นกว่า" });
     else if (rsi < 45) votes.push({ v: -1, t: "RSI " + rsi.toFixed(0) + " แรงขายเด่นกว่า" });
     else votes.push({ v: 0, t: "RSI " + rsi.toFixed(0) + " ยังไม่มีฝั่งไหนเด่น" });
@@ -302,19 +325,31 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     var caution = "";
     if (rsi >= 70) caution = "ระวัง: RSI สูงกว่า 70 ราคาอาจขึ้นมาเร็วเกินไปและพักตัวได้";
     else if (rsi <= 30) caution = "ระวัง: RSI ต่ำกว่า 30 ราคาอาจลงมาเร็วเกินไปและเด้งกลับได้";
-    return { s50: s50, s200: s200, last: last, ma50: ma50, ma200: ma200, rsi: rsi, hist: hist, votes: votes, score: score, kind: kind, caution: caution };
+    return {
+      last: last, ma50: ma50, ma200: ma200, rsi: rsi, hist: hist, votes: votes, score: score, kind: kind, caution: caution,
+      ser: { s50: s50, s200: s200, rsi: rs, hist: hs }
+    };
   }
 
-  /* ---------- rendering ---------- */
-  var $ = function (id) { return document.getElementById(id); };
+  /* ---------- state ---------- */
+  var tf = "1m", userPicked = false;
+  var daily = null, dailyName = "", dailyTs = 0, dailyLive = false, dailyMsg = "";
+  var minute = null, minuteTs = 0, minuteErr = "";
+  var sampleMode = false, sampleKind = "up";
+  var loading = { d: false, m: false };
+  var lastKind = { "1m": null, "1d": null };
+  var pending = false;
+  var CACHE_KEY = "eth-signal-cache-v1";
+
   var LABELS = {
     up: ["Bullish", "สัญญาณเอนไปทางขาขึ้น"],
     down: ["Bearish", "สัญญาณเอนไปทางขาลง"],
     flat: ["Neutral", "สัญญาณยังไม่ชัด"]
   };
-  function signed(n) { return (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n); }
 
+  /* ---------- drawing ---------- */
   function niceTicks(lo, hi) {
+    if (hi - lo < 0.01) { hi += 0.5; lo -= 0.5; }
     var raw = (hi - lo) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
     var steps = [1, 2, 2.5, 5, 10], step = mag;
     for (var i = 0; i < steps.length; i++) { if (steps[i] * mag >= raw) { step = steps[i] * mag; break; } }
@@ -322,11 +357,16 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     for (var t = Math.ceil(lo / step) * step; t <= hi; t += step) out.push(t);
     return out;
   }
+  function hhmm(sec) {
+    return new Date(sec * 1000).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
+  }
 
-  function drawChart(prices, a) {
+  function drawLine(prices, ser, unit) {
+    var svg = $("chart");
+    svg.setAttribute("viewBox", "0 0 400 230");
     var N = Math.min(180, prices.length - 199), W = 400, H = 230, L = 44, R = 10, T = 10, B = 24;
     var start = prices.length - N;
-    var p = prices.slice(start), m50 = a.s50.slice(start), m200 = a.s200.slice(start);
+    var p = prices.slice(start), m50 = ser.s50.slice(start), m200 = ser.s200.slice(start);
     var vals = p.concat(m50.filter(Boolean), m200.filter(Boolean));
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
     var pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
@@ -346,21 +386,114 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
       s += '<path class="grid" d="M' + L + " " + y(t).toFixed(1) + "H" + (W - R) + '"/>';
       s += '<text class="tick" x="' + (L - 6) + '" y="' + (y(t) + 3).toFixed(1) + '" text-anchor="end">' + fmt(t) + "</text>";
     });
-    [[0, N + " วันก่อน", "start"], [Math.round((N - 1) / 3), "", "middle"], [Math.round(2 * (N - 1) / 3), "", "middle"], [N - 1, "วันนี้", "end"]].forEach(function (t) {
-      s += '<text class="tick" x="' + x(t[0]).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + t[2] + '">' + t[1] + "</text>";
-    });
+    s += '<text class="tick" x="' + L + '" y="' + (H - 6) + '" text-anchor="start">' + N + " " + unit + "ก่อน</text>";
+    s += '<text class="tick" x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">ล่าสุด</text>';
     s += '<path class="l-ma200" d="' + path(m200) + '"/>';
     s += '<path class="l-ma50" d="' + path(m50) + '"/>';
     s += '<path class="l-price" d="' + path(p) + '"/>';
     s += '<circle class="end-dot" cx="' + x(N - 1).toFixed(1) + '" cy="' + y(p[N - 1]).toFixed(1) + '" r="3.5"/>';
-    $("chart").innerHTML = s;
+    svg.innerHTML = s;
   }
 
-  function render(prices) {
-    var a = analyze(prices);
-    $("price").textContent = "$" + fmt(a.last, 2);
-    var card = $("signalCard");
-    card.className = "card signal " + a.kind;
+  function drawCandles(cs, ser) {
+    var svg = $("chart");
+    svg.setAttribute("viewBox", "0 0 400 366");
+    var N = Math.min(60, cs.length), st = cs.length - N, i, j;
+    var W = 400, L = 8, R = 60, pw = W - L - R;
+    var yT = 8, yB = 208, rsiT = 244, rsiH = 46, mT = 312, mH = 46;
+    var step = pw / N, bw = Math.max(2, Math.floor(step * 0.7 * 10) / 10);
+    var X = function (k) { return L + (k + 0.5) * step; };
+
+    var lo = Infinity, hi = -Infinity;
+    for (i = st; i < cs.length; i++) { if (cs[i].l < lo) lo = cs[i].l; if (cs[i].h > hi) hi = cs[i].h; }
+    var lo0 = lo, hi0 = hi, r = Math.max(hi0 - lo0, 0.5);
+    if (hi0 - lo0 < 0.5) { var mid = (hi0 + lo0) / 2; lo = mid - 0.25; hi = mid + 0.25; lo0 = lo; hi0 = hi; }
+    [ser.s50, ser.s200].forEach(function (arr) {
+      for (var k = st; k < cs.length; k++) {
+        var v = arr[k];
+        if (v != null && v >= lo0 - r && v <= hi0 + r) { if (v < lo) lo = v; if (v > hi) hi = v; }
+      }
+    });
+    var pad = (hi - lo) * 0.05; lo -= pad; hi += pad;
+    var Y = function (v) { return yT + (1 - (v - lo) / (hi - lo)) * (yB - yT); };
+
+    var s = '<defs><clipPath id="cm"><rect x="' + L + '" y="' + yT + '" width="' + pw + '" height="' + (yB - yT) + '"/></clipPath></defs>';
+    var ticks = niceTicks(lo, hi);
+    var dstep = ticks.length > 1 ? ticks[1] - ticks[0] : 1;
+    var dec = dstep >= 1 ? (dstep % 1 === 0 ? 0 : 1) : 2;
+    ticks.forEach(function (t) {
+      s += '<path class="grid" d="M' + L + " " + Y(t).toFixed(1) + "H" + (W - R) + '"/>';
+      s += '<text class="tick" x="' + (W - R + 6) + '" y="' + (Y(t) + 3).toFixed(1) + '">' + fmt(t, dec) + "</text>";
+    });
+
+    var maPath = function (arr) {
+      var d = "", pen = false;
+      for (var k = st; k < cs.length; k++) {
+        if (arr[k] == null) continue;
+        d += (pen ? "L" : "M") + X(k - st).toFixed(1) + " " + Y(arr[k]).toFixed(1);
+        pen = true;
+      }
+      return d;
+    };
+    s += '<g clip-path="url(#cm)"><path class="l-ma200" d="' + maPath(ser.s200) + '"/><path class="l-ma50" d="' + maPath(ser.s50) + '"/>';
+    for (i = st; i < cs.length; i++) {
+      var c = cs[i], cx = X(i - st), up = c.c >= c.o, cls = up ? "cu" : "cd";
+      var yo = Y(c.o), yc = Y(c.c), top = Math.min(yo, yc), bh = Math.max(1, Math.abs(yo - yc));
+      s += '<line class="' + cls + '" x1="' + cx.toFixed(1) + '" x2="' + cx.toFixed(1) + '" y1="' + Y(c.h).toFixed(1) + '" y2="' + Y(c.l).toFixed(1) + '"/>';
+      s += '<rect class="' + cls + '" x="' + (cx - bw / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + bw + '" height="' + bh.toFixed(1) + '"/>';
+    }
+    s += "</g>";
+
+    var lastC = cs[cs.length - 1], yl = Y(lastC.c);
+    s += '<path class="lastline" d="M' + L + " " + yl.toFixed(1) + "H" + (W - R) + '"/>';
+    var ty = Math.min(yB - 7, Math.max(yT + 7, yl));
+    s += '<rect class="' + (lastC.c >= lastC.o ? "tag-up" : "tag-dn") + '" x="' + (W - R + 1) + '" y="' + (ty - 7).toFixed(1) + '" width="' + (R - 3) + '" height="14" rx="2"/>';
+    s += '<text class="tagtxt" x="' + (W - R + 1 + (R - 3) / 2) + '" y="' + (ty + 3.5).toFixed(1) + '" text-anchor="middle">' + fmt(lastC.c, 2) + "</text>";
+
+    for (i = 7; i < N; i += 15) {
+      s += '<text class="tick" x="' + X(i).toFixed(1) + '" y="' + (yB + 14) + '" text-anchor="middle">' + hhmm(cs[st + i].t) + "</text>";
+    }
+
+    /* RSI panel */
+    var rsiNow = ser.rsi[cs.length - 1];
+    s += '<text class="ptitle" x="' + L + '" y="' + (rsiT - 6) + '">RSI (14) · ' + (rsiNow == null ? "–" : rsiNow.toFixed(1)) + "</text>";
+    s += '<rect class="panel" x="' + L + '" y="' + rsiT + '" width="' + pw + '" height="' + rsiH + '"/>';
+    [70, 30].forEach(function (lv) {
+      var yy = rsiT + (1 - lv / 100) * rsiH;
+      s += '<path class="grid dash" d="M' + L + " " + yy.toFixed(1) + "H" + (W - R) + '"/>';
+      s += '<text class="tick" x="' + (W - R + 6) + '" y="' + (yy + 3).toFixed(1) + '">' + lv + "</text>";
+    });
+    var rp = "", pen = false;
+    for (i = st; i < cs.length; i++) {
+      var rv = ser.rsi[i];
+      if (rv == null) continue;
+      rp += (pen ? "L" : "M") + X(i - st).toFixed(1) + " " + (rsiT + (1 - rv / 100) * rsiH).toFixed(1);
+      pen = true;
+    }
+    s += '<path class="l-rsi" d="' + rp + '"/>';
+
+    /* MACD histogram panel */
+    var maxAbs = 0;
+    for (j = st; j < cs.length; j++) maxAbs = Math.max(maxAbs, Math.abs(ser.hist[j]));
+    if (maxAbs === 0) maxAbs = 1;
+    var zero = mT + mH / 2, half = mH / 2 - 2;
+    var hNow = ser.hist[cs.length - 1];
+    s += '<text class="ptitle" x="' + L + '" y="' + (mT - 6) + '">MACD ฮิสโตแกรม (12,26,9) · ' + (hNow >= 0 ? "+" : "−") + Math.abs(hNow).toFixed(2) + "</text>";
+    s += '<rect class="panel" x="' + L + '" y="' + mT + '" width="' + pw + '" height="' + mH + '"/>';
+    s += '<path class="grid dash" d="M' + L + " " + zero + "H" + (W - R) + '"/>';
+    s += '<text class="tick" x="' + (W - R + 6) + '" y="' + (zero + 3) + '">0</text>';
+    for (j = st; j < cs.length; j++) {
+      var hv = ser.hist[j], hh = Math.max(0.5, Math.abs(hv) / maxAbs * half);
+      s += '<rect class="' + (hv >= 0 ? "cu" : "cd") + ' hb" x="' + (X(j - st) - bw / 2).toFixed(1) + '" y="' + (hv >= 0 ? zero - hh : zero).toFixed(1) + '" width="' + bw + '" height="' + hh.toFixed(1) + '"/>';
+    }
+    svg.innerHTML = s;
+  }
+
+  /* ---------- rendering ---------- */
+  function setPrice(v) { $("price").textContent = v > 0 ? "$" + fmt(v, 2) : "–"; }
+
+  function renderSignal(a, unit) {
+    $("signalCard").className = "card signal " + a.kind;
     $("word").textContent = LABELS[a.kind][0];
     $("th").textContent = LABELS[a.kind][1];
     $("score").textContent = "คะแนน " + signed(a.score) + " / 4";
@@ -369,8 +502,7 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     a.votes.forEach(function (v) {
       var li = document.createElement("li");
       var b = document.createElement("span");
-      var cls = v.v > 0 ? "up" : v.v < 0 ? "down" : "flat";
-      b.className = "vote " + cls;
+      b.className = "vote " + (v.v > 0 ? "up" : v.v < 0 ? "down" : "flat");
       b.textContent = signed(v.v);
       var t = document.createElement("span");
       t.textContent = v.t;
@@ -381,29 +513,112 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     c.hidden = !a.caution;
     c.textContent = a.caution;
     $("sRsi").textContent = a.rsi.toFixed(1);
-    $("sMacd").textContent = (a.hist >= 0 ? "+" : "−") + Math.abs(a.hist).toFixed(1);
+    $("sMacd").textContent = (a.hist >= 0 ? "+" : "−") + Math.abs(a.hist).toFixed(2);
     var gap = (a.last / a.ma50 - 1) * 100;
-    $("sGap").textContent = (gap >= 0 ? "+" : "−") + Math.abs(gap).toFixed(1) + "%";
-    drawChart(prices, a);
-    return a.kind;
+    $("sGap").textContent = (gap >= 0 ? "+" : "−") + Math.abs(gap).toFixed(2) + "%";
+    $("sGapLbl").textContent = "ห่างเฉลี่ย 50 " + unit;
+    $("sigLabel").textContent = tf === "1m" ? "สัญญาณกราฟ 1 นาที" : "สัญญาณรายวัน";
   }
 
-  /* ---------- scenario buttons ---------- */
-  var current = "up";
-  function pick(k) {
-    current = k;
-    Array.prototype.forEach.call($("seg").querySelectorAll("button"), function (b) {
-      b.setAttribute("aria-pressed", b.getAttribute("data-k") === k ? "true" : "false");
-    });
-    render(simulate(k));
+  function renderEmpty(msg) {
+    $("signalCard").className = "card signal flat";
+    $("word").textContent = "–";
+    $("th").textContent = msg;
+    $("score").textContent = "–";
+    $("reasons").textContent = "";
+    $("caution").hidden = true;
+    $("sRsi").textContent = "–"; $("sMacd").textContent = "–"; $("sGap").textContent = "–";
+    $("chart").setAttribute("viewBox", "0 0 400 120");
+    $("chart").innerHTML = '<text class="tick" x="200" y="64" text-anchor="middle" style="font-size:12px">' + msg + "</text>";
   }
+
+  function redraw() {
+    var kind = null;
+    var head = minute && minute.length ? minute[minute.length - 1].c : (daily ? daily[daily.length - 1] : 0);
+    if (tf === "1m") {
+      if (minute && minute.length >= 210) {
+        var closes = minute.map(function (c) { return c.c; });
+        var a = analyze(closes, "แท่ง");
+        renderSignal(a, "แท่ง");
+        drawCandles(minute, a.ser);
+        kind = a.kind;
+      } else {
+        renderEmpty(loading.m ? "กำลังโหลดกราฟ 1 นาที..." : "ยังไม่มีข้อมูลกราฟ 1 นาที");
+      }
+    } else {
+      var arr = daily || (sampleMode ? simulate(sampleKind) : null);
+      if (arr && arr.length >= 250) {
+        var a2 = analyze(arr, "วัน");
+        renderSignal(a2, "วัน");
+        drawLine(arr, a2.ser, "วัน");
+        kind = a2.kind;
+        if (!head) head = a2.last;
+      } else {
+        renderEmpty(loading.d ? "กำลังโหลดข้อมูลรายวัน..." : "ยังไม่มีข้อมูลรายวัน");
+      }
+    }
+    setPrice(head);
+    return kind;
+  }
+
+  function clock(t) {
+    return new Date(t).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function updateBanner() {
+    var bn = $("banner"), live = false, txt;
+    if (tf === "1m") {
+      if (minute) { live = true; txt = "ข้อมูลจริง · แท่งเทียน 1 นาที จาก Coinbase ETH-USD · โหลดเมื่อ " + clock(minuteTs); }
+      else if (loading.m) txt = "กำลังโหลดกราฟ 1 นาที...";
+      else txt = "โหลดกราฟ 1 นาทีไม่ได้ (" + (minuteErr || "ไม่ทราบสาเหตุ") + ") ลองกดรีเฟรช หรือดูแบบรายวัน";
+    } else if (daily) {
+      live = true;
+      txt = (dailyLive ? "ข้อมูลจริงจาก " : "ข้อมูลที่บันทึกไว้จาก ") + dailyName + " (ราคารายวัน) · " + clock(dailyTs);
+    } else if (loading.d) {
+      txt = "กำลังโหลดข้อมูลรายวัน...";
+    } else {
+      txt = "ข้อมูลจำลอง ไม่ใช่ราคา ETH จริง · ดึงข้อมูลรายวันไม่สำเร็จ (" + (dailyMsg || "ไม่ทราบสาเหตุ") + ") ลองกดรีเฟรชอีกครั้ง";
+    }
+    bn.dataset.live = live ? "true" : "false";
+    bn.textContent = txt;
+  }
+
+  var LEG = {
+    "1m": '<span class="a">แท่งเทียน (เขียว = ขึ้น, แดง = ลง)</span><span class="b">เฉลี่ย 50 แท่ง</span><span class="c">เฉลี่ย 200 แท่ง</span>',
+    "1d": '<span class="a">ราคา</span><span class="b">เฉลี่ย 50 วัน</span><span class="c">เฉลี่ย 200 วัน</span>'
+  };
+  function view() {
+    Array.prototype.forEach.call($("tfSeg").querySelectorAll("button"), function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-tf") === tf ? "true" : "false");
+    });
+    $("legend").innerHTML = LEG[tf];
+    $("seg").hidden = !(tf === "1d" && !daily && sampleMode);
+    $("liveState").hidden = !(minute || dailyLive);
+    redraw();
+    updateBanner();
+  }
+
+  /* ---------- user controls ---------- */
+  $("tfSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    userPicked = true;
+    tf = b.getAttribute("data-tf");
+    lastKind[tf] = null;
+    $("changed").hidden = true;
+    view();
+  });
   $("seg").addEventListener("click", function (e) {
     var b = e.target.closest("button");
-    if (b) pick(b.getAttribute("data-k"));
+    if (!b) return;
+    sampleKind = b.getAttribute("data-k");
+    Array.prototype.forEach.call($("seg").querySelectorAll("button"), function (x) {
+      x.setAttribute("aria-pressed", x === b ? "true" : "false");
+    });
+    redraw();
   });
 
   /* ---------- real data ---------- */
-  var CACHE_KEY = "eth-signal-cache-v1";
   function getJSON(url) {
     var ctl = new AbortController();
     var timer = setTimeout(function () { ctl.abort(); }, 12000);
@@ -411,11 +626,17 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
       .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .finally(function () { clearTimeout(timer); });
   }
+  function reason(err) {
+    if (!err) return "ผิดพลาด";
+    if (err.name === "AbortError") return "หมดเวลา";
+    if (err.name === "TypeError") return "เชื่อมต่อไม่ได้";
+    return err.message || "ผิดพลาด";
+  }
   function fromCoinGecko() {
     return getJSON("https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=365&interval=daily")
       .then(function (j) { return { name: "CoinGecko", prices: (j.prices || []).map(function (p) { return p[1]; }) }; });
   }
-  function fromCoinbase() {
+  function fromCoinbaseDaily() {
     return getJSON("https://api.exchange.coinbase.com/products/ETH-USD/candles?granularity=86400")
       .then(function (j) {
         if (!Array.isArray(j)) throw new Error((j && j.message) || "รูปแบบข้อมูลไม่ถูกต้อง");
@@ -427,137 +648,9 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     return getJSON("https://min-api.cryptocompare.com/data/v2/histoday?fsym=ETH&tsym=USD&limit=400")
       .then(function (j) { return { name: "CryptoCompare", prices: j.Data.Data.map(function (d) { return d.close; }).filter(function (v) { return v > 0; }) }; });
   }
-  function clock(t) {
-    var d = new Date(t);
-    return d.toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-  }
-  function showReal(res, ts, cached) {
-    $("seg").hidden = true;
-    var kind = render(res.prices);
-    if (!cached) {
-      history = res.prices.slice();
-      lastLoad = Date.now();
-      lastKind = kind;
-      $("changed").hidden = true;
-      $("liveState").hidden = false;
-      connectWS();
-    } else {
-      history = null;
-      $("liveState").hidden = true;
-    }
-    var bn = $("banner");
-    bn.dataset.live = "true";
-    bn.textContent = (cached ? "ข้อมูลที่บันทึกไว้จาก " : "ข้อมูลจริงจาก ") + res.name + " (ราคารายวัน) · " + clock(ts);
-  }
-  function showSample(why) {
-    history = null;
-    $("liveState").hidden = true;
-    $("seg").hidden = false;
-    pick(current);
-    var bn = $("banner");
-    bn.dataset.live = "false";
-    bn.textContent = "ข้อมูลจำลอง ไม่ใช่ราคา ETH จริง · " + why;
-  }
-  /* ---------- realtime ---------- */
-  var history = null, ws = null, wsTries = 0, pollTimer = null, pending = false, lastLoad = 0, lastKind = null, reconnectTimer = null;
-  function setLive(on, text) {
-    var el = $("liveState");
-    el.dataset.on = on ? "true" : "false";
-    el.textContent = text;
-  }
-  function applyTick(price) {
-    if (!history || !(price > 0)) return;
-    var prev = history[history.length - 1];
-    history[history.length - 1] = price;
-    pending = true;
-    if (price !== prev) {
-      var pe = $("price");
-      pe.className = "price num " + (price > prev ? "up" : "down");
-      setTimeout(function () { pe.className = "price num"; }, 700);
-    }
-  }
-  setInterval(function () {
-    if (!pending || !history) return;
-    pending = false;
-    var k = render(history);
-    if (lastKind && k !== lastKind) {
-      var ch = $("changed");
-      ch.hidden = false;
-      ch.textContent = "สัญญาณเปลี่ยนจาก " + LABELS[lastKind][0] + " เป็น " + LABELS[k][0] + " เมื่อ " + new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    }
-    lastKind = k;
-  }, 1000);
-  function closeWS() {
-    clearTimeout(reconnectTimer);
-    if (ws) { var w = ws; ws = null; try { w.close(); } catch (e) {} }
-  }
-  function connectWS() {
-    if (!history || document.hidden) return;
-    closeWS();
-    var mine;
-    try { mine = new WebSocket("wss://ws-feed.exchange.coinbase.com"); } catch (e) { startPolling(); return; }
-    ws = mine;
-    if (!pollTimer) setLive(false, "กำลังเชื่อมต่อ...");
-    mine.onopen = function () {
-      mine.send(JSON.stringify({ type: "subscribe", product_ids: ["ETH-USD"], channels: ["ticker"] }));
-    };
-    mine.onmessage = function (ev) {
-      var m;
-      try { m = JSON.parse(ev.data); } catch (e) { return; }
-      if (m.type === "ticker" && m.price) {
-        wsTries = 0;
-        stopPolling();
-        applyTick(parseFloat(m.price));
-        setLive(true, "สด · Coinbase ETH-USD");
-      }
-    };
-    mine.onerror = function () { try { mine.close(); } catch (e) {} };
-    mine.onclose = function () {
-      if (ws !== mine) return;
-      ws = null;
-      wsTries++;
-      if (!pollTimer) setLive(false, "ขาดการเชื่อมต่อ");
-      if (wsTries >= 2) startPolling();
-      if (!document.hidden) reconnectTimer = setTimeout(connectWS, Math.min(30000, 2000 * wsTries));
-    };
-  }
-  function poll() {
-    if (document.hidden || !history) return;
-    getJSON("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd")
-      .then(function (j) {
-        var v = j && j.ethereum && j.ethereum.usd;
-        if (v > 0) { applyTick(v); setLive(true, "อัปเดตทุก 30 วินาที · CoinGecko"); }
-      })
-      .catch(function () { setLive(false, "อัปเดตราคาไม่ได้"); });
-  }
-  function startPolling() {
-    if (pollTimer) return;
-    poll();
-    pollTimer = setInterval(poll, 30000);
-  }
-  function stopPolling() {
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-  }
-  document.addEventListener("visibilitychange", function () {
-    if (document.hidden) {
-      closeWS();
-      stopPolling();
-      if (history) setLive(false, "หยุดชั่วคราว");
-    } else if (history) {
-      if (Date.now() - lastLoad > 300000) load();
-      else { wsTries = 0; connectWS(); }
-    }
-  });
-
-  function reason(err) {
-    if (!err) return "ผิดพลาด";
-    if (err.name === "AbortError") return "หมดเวลา";
-    if (err.name === "TypeError") return "เชื่อมต่อไม่ได้";
-    return err.message || "ผิดพลาด";
-  }
   function tryAll() {
     var errs = [];
-    var srcs = [["CoinGecko", fromCoinGecko], ["Coinbase", fromCoinbase], ["CryptoCompare", fromCryptoCompare]];
+    var srcs = [["CoinGecko", fromCoinGecko], ["Coinbase", fromCoinbaseDaily], ["CryptoCompare", fromCryptoCompare]];
     function step(i) {
       if (i >= srcs.length) {
         var e = new Error("all failed");
@@ -576,31 +669,176 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     }
     return step(0);
   }
+
+  function loadDaily() {
+    loading.d = true;
+    return tryAll()
+      .then(function (res) {
+        daily = res.prices.slice();
+        dailyName = res.name; dailyTs = Date.now(); dailyLive = true; sampleMode = false;
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: dailyTs, res: res })); } catch (e) {}
+      })
+      .catch(function (err) {
+        var c = null;
+        try { c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch (e) {}
+        if (c && c.res && c.res.prices && c.res.prices.length >= 250) {
+          daily = c.res.prices.slice(); dailyName = c.res.name; dailyTs = c.ts; dailyLive = false; sampleMode = false;
+        } else {
+          daily = null; dailyLive = false; sampleMode = true;
+          dailyMsg = (err && err.details) || reason(err);
+        }
+      })
+      .finally(function () { loading.d = false; });
+  }
+
+  function loadMinute() {
+    loading.m = true;
+    return getJSON("https://api.exchange.coinbase.com/products/ETH-USD/candles?granularity=60")
+      .then(function (j) {
+        if (!Array.isArray(j)) throw new Error((j && j.message) || "รูปแบบข้อมูลไม่ถูกต้อง");
+        var rows = j.slice().sort(function (a, b) { return a[0] - b[0]; })
+          .map(function (c) { return { t: c[0], l: c[1], h: c[2], o: c[3], c: c[4] }; });
+        if (rows.length < 210) throw new Error("ข้อมูลไม่พอ");
+        minute = rows; minuteTs = Date.now(); minuteErr = "";
+      })
+      .catch(function (err) {
+        if (!minute) minuteErr = reason(err);
+      })
+      .finally(function () { loading.m = false; });
+  }
+
   function load() {
     var btn = $("liveBtn");
     btn.disabled = true;
     closeWS();
     stopPolling();
-    $("banner").dataset.live = "false";
-    $("banner").textContent = "กำลังโหลดราคา ETH จริง...";
-    return tryAll()
-      .then(function (res) {
-        var ts = Date.now();
-        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: ts, res: res })); } catch (e) {}
-        showReal(res, ts, false);
-      })
-      .catch(function (err) {
-        var c = null;
-        try { c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch (e) {}
-        if (c && c.res && c.res.prices && c.res.prices.length >= 250) showReal(c.res, c.ts, true);
-        else showSample("ดึงข้อมูลไม่สำเร็จ (" + ((err && err.details) || "ไม่ทราบสาเหตุ") + ") ลองกดรีเฟรชอีกครั้ง");
+    $("changed").hidden = true;
+    lastKind["1m"] = null; lastKind["1d"] = null;
+    var pD = loadDaily(), pM = loadMinute();
+    view();
+    return Promise.all([pD, pM])
+      .then(function () {
+        if (!minute && tf === "1m" && !userPicked) tf = "1d";
+        view();
+        connectWS();
       })
       .finally(function () { btn.disabled = false; });
   }
   $("liveBtn").addEventListener("click", load);
+
+  /* ---------- realtime ---------- */
+  var ws = null, wsTries = 0, pollTimer = null, reconnectTimer = null;
+  function setLive(on, text) {
+    var el = $("liveState");
+    el.dataset.on = on ? "true" : "false";
+    el.textContent = text;
+  }
+  function onTick(price, tms) {
+    if (!(price > 0)) return;
+    var prev = null;
+    if (daily && dailyLive) { prev = daily[daily.length - 1]; daily[daily.length - 1] = price; }
+    if (minute) {
+      var last = minute[minute.length - 1];
+      if (prev == null) prev = last.c;
+      var m = Math.floor(tms / 60000) * 60;
+      if (m === last.t) {
+        last.c = price;
+        if (price > last.h) last.h = price;
+        if (price < last.l) last.l = price;
+      } else if (m > last.t) {
+        minute.push({ t: m, o: price, h: price, l: price, c: price });
+        if (minute.length > 600) minute.shift();
+      }
+    }
+    pending = true;
+    if (prev != null && price !== prev) {
+      var pe = $("price");
+      pe.className = "price num " + (price > prev ? "up" : "down");
+      setTimeout(function () { pe.className = "price num"; }, 700);
+    }
+  }
+  setInterval(function () {
+    if (!pending) return;
+    pending = false;
+    var k = redraw();
+    if (k && lastKind[tf] && k !== lastKind[tf]) {
+      var ch = $("changed");
+      ch.hidden = false;
+      ch.textContent = "สัญญาณเปลี่ยนจาก " + LABELS[lastKind[tf]][0] + " เป็น " + LABELS[k][0] + " เมื่อ " + new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+    if (k) lastKind[tf] = k;
+  }, 500);
+
+  function closeWS() {
+    clearTimeout(reconnectTimer);
+    if (ws) { var w = ws; ws = null; try { w.close(); } catch (e) {} }
+  }
+  function connectWS() {
+    if (document.hidden || !(minute || dailyLive)) return;
+    closeWS();
+    var mine;
+    try { mine = new WebSocket("wss://ws-feed.exchange.coinbase.com"); } catch (e) { startPolling(); return; }
+    ws = mine;
+    if (!pollTimer) setLive(false, "กำลังเชื่อมต่อ...");
+    mine.onopen = function () {
+      mine.send(JSON.stringify({ type: "subscribe", product_ids: ["ETH-USD"], channels: ["ticker"] }));
+      if (wsTries > 0) loadMinute().then(function () { pending = true; });
+    };
+    mine.onmessage = function (ev) {
+      var m;
+      try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.type === "ticker" && m.price) {
+        wsTries = 0;
+        stopPolling();
+        var tms = m.time ? Date.parse(m.time) : Date.now();
+        if (!(tms > 0)) tms = Date.now();
+        onTick(parseFloat(m.price), tms);
+        setLive(true, "สด · Coinbase ETH-USD");
+      }
+    };
+    mine.onerror = function () { try { mine.close(); } catch (e) {} };
+    mine.onclose = function () {
+      if (ws !== mine) return;
+      ws = null;
+      wsTries++;
+      if (!pollTimer) setLive(false, "ขาดการเชื่อมต่อ");
+      if (wsTries >= 2) startPolling();
+      if (!document.hidden) reconnectTimer = setTimeout(connectWS, Math.min(30000, 2000 * wsTries));
+    };
+  }
+  function poll() {
+    if (document.hidden || !(minute || dailyLive)) return;
+    getJSON("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd")
+      .then(function (j) {
+        var v = j && j.ethereum && j.ethereum.usd;
+        if (v > 0) { onTick(v, Date.now()); setLive(true, "อัปเดตทุก 30 วินาที · CoinGecko"); }
+      })
+      .catch(function () { setLive(false, "อัปเดตราคาไม่ได้"); });
+  }
+  function startPolling() {
+    if (pollTimer) return;
+    poll();
+    pollTimer = setInterval(poll, 30000);
+  }
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      closeWS();
+      stopPolling();
+      if (minute || dailyLive) setLive(false, "หยุดชั่วคราว");
+    } else {
+      wsTries = 0;
+      var jobs = [];
+      if (Date.now() - minuteTs > 90000) jobs.push(loadMinute());
+      if (dailyLive && Date.now() - dailyTs > 300000) jobs.push(loadDaily());
+      Promise.all(jobs).then(function () { view(); connectWS(); });
+    }
+  });
+
   load();
 })();
 </script>
-
 </body>
 </html>
