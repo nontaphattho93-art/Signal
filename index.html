@@ -826,102 +826,96 @@ rect.cu, rect.cd { stroke: none; }
   }
 
   /* --- GOLD loaders --- */
+  /* --- Binance helpers --- */
+  var BINANCE_REST    = "https://api.binance.com/api/v3";       /* Spot (BTC/ETH ใช้ได้) */
+  var BINANCE_F_REST  = "https://fapi.binance.com/fapi/v1";    /* Futures USDⓈ-M (XAU/USDT อยู่ที่นี่) */
+  var BINANCE_WS      = "wss://stream.binance.com:9443/stream?streams=";
+  var BINANCE_F_WS    = "wss://fstream.binance.com/stream?streams="; /* Futures stream */
+
+  function parseBinanceKlines(arr) {
+    /* Binance kline: [openTime, open, high, low, close, volume, ...] */
+    return arr.map(function(k){
+      return { t: Math.floor(k[0]/1000), o: parseFloat(k[1]), h: parseFloat(k[2]),
+               l: parseFloat(k[3]), c: parseFloat(k[4]) };
+    });
+  }
+
   function loadGoldDaily() {
     if (loadingGold) return Promise.resolve();
     loadingGold = true;
 
-    /* ลำดับ source: XAU จริงก่อน → fallback PAXG/XAUT */
-    var srcs = [
-      /* Source 1: CryptoCompare XAU/USD — ราคาทองจริง */
-      ["CryptoCompare XAU", function() {
-        return getJSON("https://min-api.cryptocompare.com/data/v2/histoday?fsym=XAU&tsym=USD&limit=400")
-          .then(function(j){
-            if (!j || !j.Data || !j.Data.Data) throw new Error("format");
-            var p=j.Data.Data.map(function(d){return d.close;}).filter(function(v){return v>100;}); /* ทองต้อง >$100 */
-            if (p.length<250) throw new Error("ข้อมูลไม่พอ");
-            return p;
-          });
-      }],
-      /* Source 2: CoinGecko XAU — ผ่าน commodity endpoint */
-      ["CoinGecko XAU", function() {
-        return getJSON("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=gold&sparkline=false")
-          .then(function() { throw new Error("no history"); }); /* ไม่มี history ข้ามไป */
-      }],
-      /* Source 3: CoinGecko PAXG — 1 PAXG = 1 troy oz ทอง */
-      ["CoinGecko PAXG", function() {
-        return getJSON("https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=usd&days=365&interval=daily")
-          .then(function(j){
-            var p=(j.prices||[]).map(function(x){return x[1];}).filter(function(v){return v>100;});
-            if (p.length<250) throw new Error("ข้อมูลไม่พอ");
-            return p;
-          });
-      }],
-      /* Source 4: CoinGecko XAUT — Tether Gold, 1 token = 1 troy oz */
-      ["CoinGecko XAUT", function() {
-        return getJSON("https://api.coingecko.com/api/v3/coins/tether-gold/market_chart?vs_currency=usd&days=365&interval=daily")
-          .then(function(j){
-            var p=(j.prices||[]).map(function(x){return x[1];}).filter(function(v){return v>100;});
-            if (p.length<250) throw new Error("ข้อมูลไม่พอ");
-            return p;
-          });
-      }],
-      /* Source 5: Coinbase PAXG-USD candles */
-      ["Coinbase PAXG", function() {
-        return getJSON("https://api.exchange.coinbase.com/products/PAXG-USD/candles?granularity=86400")
-          .then(function(j){
-            if (!Array.isArray(j)) throw new Error("format");
-            var r=j.slice().sort(function(a,b){return a[0]-b[0];});
-            var p=r.map(function(c){return c[4];}).filter(function(v){return v>100;});
-            if (p.length<250) throw new Error("ข้อมูลไม่พอ");
-            return p;
-          });
-      }]
-    ];
+    /* Source 1: Binance Futures XAUUSDT daily (fapi) */
+    function fromBinanceDaily() {
+      return getJSON(BINANCE_F_REST + "/klines?symbol=XAUUSDT&interval=1d&limit=500")
+        .then(function(j){
+          if (!Array.isArray(j)) throw new Error("format");
+          var p = j.map(function(k){ return parseFloat(k[4]); }).filter(function(v){ return v > 100; });
+          if (p.length < 250) throw new Error("ข้อมูลไม่พอ");
+          return { name: "Binance Futures XAU/USDT", prices: p };
+        });
+    }
 
+    /* Source 2: CryptoCompare XAU/USD — fallback */
+    function fromCryptoCompare() {
+      return getJSON("https://min-api.cryptocompare.com/data/v2/histoday?fsym=XAU&tsym=USD&limit=400")
+        .then(function(j){
+          if (!j || !j.Data || !j.Data.Data) throw new Error("format");
+          var p = j.Data.Data.map(function(d){ return d.close; }).filter(function(v){ return v > 100; });
+          if (p.length < 250) throw new Error("ข้อมูลไม่พอ");
+          return { name: "CryptoCompare XAU", prices: p };
+        });
+    }
+
+    /* Source 3: CoinGecko PAXG — fallback สุดท้าย */
+    function fromPAXG() {
+      return getJSON("https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=usd&days=365&interval=daily")
+        .then(function(j){
+          var p = (j.prices||[]).map(function(x){ return x[1]; }).filter(function(v){ return v > 100; });
+          if (p.length < 250) throw new Error("ข้อมูลไม่พอ");
+          return { name: "CoinGecko PAXG", prices: p };
+        });
+    }
+
+    var srcs = [fromBinanceDaily, fromCryptoCompare, fromPAXG];
     var errs = [];
     function tryNext(i) {
       if (i >= srcs.length) {
-        /* ทุก source ล้มเหลว — ลอง cache */
-        var c=null; try { c=JSON.parse(localStorage.getItem(GOLD_CACHE)||"null"); } catch(e) {}
+        var c = null; try { c = JSON.parse(localStorage.getItem(GOLD_CACHE)||"null"); } catch(e) {}
         if (c && c.prices && c.prices.length >= 250) {
           goldDaily=c.prices; goldDailyTs=c.ts; goldDailyLive=false; goldErr="";
         } else {
           goldDaily=null;
-          goldErr="ดึงข้อมูล XAU ไม่สำเร็จ (" + errs.join(", ") + ")";
+          goldErr = "ดึงข้อมูล XAU ไม่สำเร็จ (" + errs.join(", ") + ")";
         }
         return Promise.resolve();
       }
-      return srcs[i][1]()
-        .then(function(prices){
-          goldDaily=prices; goldDailyTs=Date.now(); goldDailyLive=true;
-          goldErr=""; /* บันทึกว่าได้จาก source ไหน */
-          goldSourceName = srcs[i][0];
+      return srcs[i]()
+        .then(function(res){
+          goldDaily=res.prices; goldDailyTs=Date.now(); goldDailyLive=true;
+          goldErr=""; goldSourceName=res.name;
           try { localStorage.setItem(GOLD_CACHE, JSON.stringify({ts:goldDailyTs,prices:goldDaily,src:goldSourceName})); } catch(e) {}
         })
         .catch(function(err){
-          errs.push(srcs[i][0] + ": " + (err&&err.message||"ผิดพลาด"));
+          errs.push((err&&err.message)||"ผิดพลาด");
           return tryNext(i+1);
         });
     }
     return tryNext(0).finally(function(){ loadingGold=false; });
   }
 
-  /* --- Gold 5-minute loader --- */
+  /* --- Gold 5-minute loader (Binance XAUUSDT 5m) --- */
   function loadGoldMinute() {
     if (loadingGoldM) return Promise.resolve();
     loadingGoldM = true;
-    /* ลอง PAXG-USD 5 นาที จาก Coinbase */
-    return getJSON("https://api.exchange.coinbase.com/products/PAXG-USD/candles?granularity=" + GOLD_MINUTE_GRAN)
-      .then(function(j) {
+    /* Binance Futures XAUUSDT 5m klines — limit=300 (~25 ชั่วโมง) */
+    return getJSON(BINANCE_F_REST + "/klines?symbol=XAUUSDT&interval=5m&limit=300")
+      .then(function(j){
         if (!Array.isArray(j)) throw new Error("format");
-        var rows = j.slice().sort(function(a,b){return a[0]-b[0];})
-          .map(function(c){return {t:c[0],l:c[1],h:c[2],o:c[3],c:c[4]};});
-        /* กรอง candle ที่ราคา 0 (ไม่มีการซื้อขาย) */
-        rows = rows.filter(function(r){return r.c > 100;});
-        if (rows.length < 30) throw new Error("ข้อมูลไม่พอ (PAXG volume น้อย)");
+        var rows = parseBinanceKlines(j).filter(function(r){ return r.c > 100; });
+        if (rows.length < 30) throw new Error("ข้อมูลไม่พอ");
         goldMinute = rows; goldMinuteTs = Date.now(); goldMinuteErr = "";
       })
-      .catch(function(err) {
+      .catch(function(err){
         if (!goldMinute) goldMinuteErr = reason(err);
       })
       .finally(function(){ loadingGoldM = false; });
@@ -1031,7 +1025,7 @@ rect.cu, rect.cd { stroke: none; }
       "1d": '<span class="btc">BTC ราคา</span><span class="b">MA 50 วัน</span><span class="c">MA 200 วัน</span><span class="fr">Fib</span><span class="sf">SL·Fib</span><span class="sa">SL·ATR</span>'
     },
     gold: {
-      "1m": '<span class="g">PAXG แท่งเทียน 5 นาที</span><span class="b">MA 50</span><span class="c">MA 200</span><span class="fr">Fib</span><span class="sf">SL·Fib</span><span class="sa">SL·ATR</span>',
+      "1m": '<span class="g">XAU/USDT แท่งเทียน 5 นาที</span><span class="b">MA 50</span><span class="c">MA 200</span><span class="fr">Fib</span><span class="sf">SL·Fib</span><span class="sa">SL·ATR</span>',
       "1d": '<span class="g">GOLD ราคา</span><span class="b">MA 50 วัน</span><span class="c">MA 200 วัน</span><span class="fr">Fib</span><span class="sf">SL·Fib</span><span class="sa">SL·ATR</span>'
     }
   };
@@ -1073,8 +1067,8 @@ rect.cu, rect.cd { stroke: none; }
           $("price").textContent = "$" + fmt(goldMinute[goldMinute.length-1].c, 2);
         } else {
           window._altZoneResult = null;
-          var msg5 = loadingGoldM ? "กำลังโหลด PAXG 5 นาที..." :
-            (goldMinuteErr ? "โหลด 5 นาทีไม่ได้: " + goldMinuteErr : "ยังไม่มีข้อมูล 5 นาที");
+          var msg5 = loadingGoldM ? "กำลังโหลด XAU 5 นาที..." :
+            (goldMinuteErr ? "โหลด XAU 5 นาทีไม่ได้: " + goldMinuteErr : "ยังไม่มีข้อมูล XAU 5 นาที");
           renderAltEmpty(msg5);
           $("altSlFib").textContent="–"; $("altSlAtr").textContent="–"; $("altSlNote").textContent="–";
         }
@@ -1161,8 +1155,8 @@ rect.cu, rect.cd { stroke: none; }
       }
     } else if (asset==="gold") {
       if (altTf==="1m") {
-        if (goldMinute) { live=true; txt="ข้อมูลจริง · PAXG-USD แท่งเทียน 5 นาที จาก Coinbase · โหลดเมื่อ "+clock(goldMinuteTs); }
-        else txt=loadingGoldM?"กำลังโหลด PAXG 5 นาที...":(goldMinuteErr?"โหลด 5 นาทีไม่ได้: "+goldMinuteErr:"ยังไม่มีข้อมูล 5 นาที");
+        if (goldMinute) { live=true; txt="ข้อมูลจริง · XAU/USDT แท่งเทียน 5 นาที จาก Binance Futures · โหลดเมื่อ "+clock(goldMinuteTs); }
+        else txt=loadingGoldM?"กำลังโหลด XAU 5 นาที...":(goldMinuteErr?"โหลด 5 นาทีไม่ได้: "+goldMinuteErr:"ยังไม่มีข้อมูล 5 นาที");
       } else {
         if (goldDaily) {
           var srcLabel=goldSourceName?" · "+goldSourceName:"";
@@ -1870,40 +1864,6 @@ rect.cu, rect.cd { stroke: none; }
       .finally(function () { loading.m = false; });
   }
 
-  function load() {
-    var btn = $("liveBtn");
-    btn.disabled = true;
-    closeWS();
-    stopPolling();
-    $("changed").hidden = true;
-    lastKind["1m"] = null; lastKind["1d"] = null;
-    var pD = loadDaily(), pM = loadMinute();
-    view();
-    return Promise.all([pD, pM])
-      .then(function () {
-        if (!minute && tf === "1m" && !userPicked) tf = "1d";
-        view();
-        connectWS();
-      })
-      .finally(function () { btn.disabled = false; });
-  }
-  $("liveBtn").addEventListener("click", function() {
-    if (asset==="btc") {
-      var btn=$("liveBtn"); btn.disabled=true;
-      btcDaily=null; btcMinute=null;
-      var jobs=[loadBtcDaily(), loadBtcMinute()];
-      $("banner").dataset.live="false"; $("banner").textContent="กำลังโหลดข้อมูล BTC...";
-      Promise.all(jobs).then(function(){ redrawAlt(); btn.disabled=false; });
-    } else if (asset==="gold") {
-      var btn2=$("liveBtn"); btn2.disabled=true;
-      goldDaily=null; goldMinute=null;
-      $("banner").dataset.live="false"; $("banner").textContent="กำลังโหลดข้อมูล XAU...";
-      Promise.all([loadGoldDaily(), loadGoldMinute()]).then(function(){ redrawAlt(); btn2.disabled=false; });
-    } else {
-      load();
-    }
-  });
-
   /* ---------- realtime ---------- */
   var ws = null, wsTries = 0, pollTimer = null, reconnectTimer = null;
   function setLive(on, text) {
@@ -1949,6 +1909,67 @@ rect.cu, rect.cd { stroke: none; }
     if (k) lastKind[tf] = k;
   }, 500);
 
+  /* ---------- Binance WebSocket (XAU/USDT + XRP/USDT realtime) ---------- */
+  var wsBinance = null, wsBinanceTries = 0, wsBinanceReconnect = null;
+
+  function onGoldTick(px, tms) {
+    if (!(px > 0)) return;
+    if (goldDaily && goldDailyLive) goldDaily[goldDaily.length-1] = px;
+    if (goldMinute) {
+      var lastG = goldMinute[goldMinute.length-1];
+      var mg = Math.floor(tms/300000)*300; /* 5 นาที = 300 วินาที */
+      if (mg === lastG.t) { lastG.c=px; if(px>lastG.h)lastG.h=px; if(px<lastG.l)lastG.l=px; }
+      else if (mg > lastG.t) { goldMinute.push({t:mg,o:px,h:px,l:px,c:px}); if(goldMinute.length>600)goldMinute.shift(); }
+    }
+    if (asset==="gold") { pending=true; setLive(true, "สด · Binance Futures XAU/USDT"); }
+  }
+
+  function onXrpBinanceTick(px, tms) {
+    if (!(px > 0)) return;
+    if (xrpDaily && xrpDailyLive) xrpDaily[xrpDaily.length-1] = px;
+    if (xrpMinute) {
+      var lastX2 = xrpMinute[xrpMinute.length-1];
+      var mx2 = Math.floor(tms/60000)*60;
+      if (mx2 === lastX2.t) { lastX2.c=px; if(px>lastX2.h)lastX2.h=px; if(px<lastX2.l)lastX2.l=px; }
+      else if (mx2 > lastX2.t) { xrpMinute.push({t:mx2,o:px,h:px,l:px,c:px}); if(xrpMinute.length>600)xrpMinute.shift(); }
+    }
+    /* XRP จาก Binance เป็น USDT — ใช้เสริมถ้า Coinbase WS หลุด */
+    if (asset==="xrp" && !ws) { pending=true; setLive(true, "สด · Binance XRP/USDT"); }
+  }
+
+  function closeBinanceWS() {
+    clearTimeout(wsBinanceReconnect);
+    if (wsBinance) { var w=wsBinance; wsBinance=null; try { w.close(); } catch(e) {} }
+  }
+
+  function connectBinanceWS() {
+    if (document.hidden) return;
+    closeBinanceWS();
+    /* XAU อยู่ใน Futures stream, XRP ใช้ Spot stream แยกกัน
+       รวมเป็น Futures stream เดียว — xauusdt@miniTicker อยู่ใน fstream */
+    var streams = "xauusdt@miniTicker";
+    var mine2;
+    try { mine2 = new WebSocket(BINANCE_F_WS + streams); } catch(e) { return; }
+    wsBinance = mine2;
+    mine2.onmessage = function(ev) {
+      var d; try { d = JSON.parse(ev.data); } catch(e) { return; }
+      var tick = d.data || d; /* combined stream wraps in {stream, data} */
+      if (!tick || !tick.c) return;
+      var px = parseFloat(tick.c);
+      var tms = tick.E || Date.now();
+      wsBinanceTries = 0;
+      if (tick.s === "XAUUSDT") onGoldTick(px, tms);
+      else if (tick.s === "XRPUSDT") onXrpBinanceTick(px, tms);
+    };
+    mine2.onerror = function() { try { mine2.close(); } catch(e) {} };
+    mine2.onclose = function() {
+      if (wsBinance !== mine2) return;
+      wsBinance = null; wsBinanceTries++;
+      if (!document.hidden) wsBinanceReconnect = setTimeout(connectBinanceWS, Math.min(30000, 2000*wsBinanceTries));
+    };
+  }
+
+  /* ---------- Coinbase WebSocket (ETH + BTC) ---------- */
   function closeWS() {
     clearTimeout(reconnectTimer);
     if (ws) { var w = ws; ws = null; try { w.close(); } catch (e) {} }
@@ -1961,7 +1982,7 @@ rect.cu, rect.cd { stroke: none; }
     ws = mine;
     if (!pollTimer) setLive(false, "กำลังเชื่อมต่อ...");
     mine.onopen = function () {
-      mine.send(JSON.stringify({ type: "subscribe", product_ids: ["ETH-USD", "BTC-USD"], channels: ["ticker"] }));
+      mine.send(JSON.stringify({ type: "subscribe", product_ids: ["ETH-USD", "BTC-USD", "XRP-USD"], channels: ["ticker"] }));
       if (wsTries > 0) loadMinute().then(function () { pending = true; });
     };
     mine.onmessage = function (ev) {
@@ -1977,7 +1998,6 @@ rect.cu, rect.cd { stroke: none; }
           onTick(px, tms);
           if (asset === "eth") setLive(true, "สด · Coinbase ETH-USD");
         } else if (m.product_id === "BTC-USD") {
-          /* อัปเดต BTC minute realtime */
           if (btcMinute) {
             var lastB = btcMinute[btcMinute.length - 1];
             var mb = Math.floor(tms / 60000) * 60;
@@ -1985,10 +2005,16 @@ rect.cu, rect.cd { stroke: none; }
             else if (mb > lastB.t) { btcMinute.push({t:mb,o:px,h:px,l:px,c:px}); if(btcMinute.length>600)btcMinute.shift(); }
           }
           if (btcDaily && btcDailyLive) btcDaily[btcDaily.length-1]=px;
-          if (asset === "btc") {
-            pending = true;
-            setLive(true, "สด · Coinbase BTC-USD");
+          if (asset === "btc") { pending=true; setLive(true, "สด · Coinbase BTC-USD"); }
+        } else if (m.product_id === "XRP-USD") {
+          if (xrpMinute) {
+            var lastX = xrpMinute[xrpMinute.length - 1];
+            var mx = Math.floor(tms / 60000) * 60;
+            if (mx === lastX.t) { lastX.c=px; if(px>lastX.h)lastX.h=px; if(px<lastX.l)lastX.l=px; }
+            else if (mx > lastX.t) { xrpMinute.push({t:mx,o:px,h:px,l:px,c:px}); if(xrpMinute.length>600)xrpMinute.shift(); }
           }
+          if (xrpDaily && xrpDailyLive) xrpDaily[xrpDaily.length-1]=px;
+          if (asset === "xrp") { pending=true; setLive(true, "สด · Coinbase XRP-USD"); }
         }
       }
     };
@@ -2022,14 +2048,59 @@ rect.cu, rect.cd { stroke: none; }
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
       closeWS();
+      closeBinanceWS();
       stopPolling();
       if (minute || dailyLive) setLive(false, "หยุดชั่วคราว");
     } else {
-      wsTries = 0;
+      wsTries = 0; wsBinanceTries = 0;
       var jobs = [];
       if (Date.now() - minuteTs > 90000) jobs.push(loadMinute());
       if (dailyLive && Date.now() - dailyTs > 300000) jobs.push(loadDaily());
-      Promise.all(jobs).then(function () { view(); connectWS(); });
+      /* รีเฟรช gold ถ้าเปิดแอปทิ้งไว้นาน */
+      if (goldDailyLive && Date.now() - goldDailyTs > 300000) jobs.push(loadGoldDaily());
+      if (goldMinute && Date.now() - goldMinuteTs > 300000) jobs.push(loadGoldMinute());
+      Promise.all(jobs).then(function () { view(); connectWS(); connectBinanceWS(); });
+    }
+  });
+
+  function load() {
+    var btn = $("liveBtn");
+    btn.disabled = true;
+    closeWS(); closeBinanceWS();
+    stopPolling();
+    $("changed").hidden = true;
+    lastKind["1m"] = null; lastKind["1d"] = null;
+    var pD = loadDaily(), pM = loadMinute();
+    view();
+    return Promise.all([pD, pM])
+      .then(function () {
+        if (!minute && tf === "1m" && !userPicked) tf = "1d";
+        view();
+        connectWS();
+        connectBinanceWS();
+      })
+      .finally(function () { btn.disabled = false; });
+  }
+  $("liveBtn").addEventListener("click", function() {
+    if (asset==="btc") {
+      var btn=$("liveBtn"); btn.disabled=true;
+      btcDaily=null; btcMinute=null;
+      var jobsB=[loadBtcDaily(), loadBtcMinute()];
+      $("banner").dataset.live="false"; $("banner").textContent="กำลังโหลดข้อมูล BTC...";
+      Promise.all(jobsB).then(function(){ redrawAlt(); btn.disabled=false; });
+    } else if (asset==="xrp") {
+      var btn=$("liveBtn"); btn.disabled=true;
+      xrpDaily=null; xrpMinute=null;
+      var jobsX=[loadXrpDaily(), loadXrpMinute()];
+      $("banner").dataset.live="false"; $("banner").textContent="กำลังโหลดข้อมูล XRP...";
+      Promise.all(jobsX).then(function(){ redrawAlt(); btn.disabled=false; });
+    } else if (asset==="gold") {
+      var btn2=$("liveBtn"); btn2.disabled=true;
+      goldDaily=null; goldMinute=null;
+      $("banner").dataset.live="false"; $("banner").textContent="กำลังโหลดข้อมูล XAU...";
+      Promise.all([loadGoldDaily(), loadGoldMinute()]).then(function(){ redrawAlt(); btn2.disabled=false; });
+    } else {
+      load();
     }
   });
 
