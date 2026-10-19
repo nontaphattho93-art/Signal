@@ -179,7 +179,7 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
       <button type="button" data-k="side" aria-pressed="false">แกว่งตัว</button>
       <button type="button" data-k="down" aria-pressed="false">ขาลง</button>
     </div>
-    <div class="chart-wrap"><svg id="chart" viewBox="0 0 400 230" role="img" aria-label="กราฟราคา 180 วันล่าสุด พร้อมเส้นค่าเฉลี่ย 50 และ 200 วัน"></svg></div>
+    <div class="chart-wrap"><svg id="chart" viewBox="0 0 400 230" role="img" aria-label="กราฟราคาย้อนหลัง พร้อมเส้นค่าเฉลี่ย 50 และ 200 วัน"></svg></div>
     <div class="legend"><span class="a">ราคา</span><span class="b">เฉลี่ย 50 วัน</span><span class="c">เฉลี่ย 200 วัน</span></div>
   </section>
 
@@ -316,7 +316,7 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
   }
 
   function drawChart(prices, a) {
-    var N = 180, W = 400, H = 230, L = 44, R = 10, T = 10, B = 24;
+    var N = Math.min(180, prices.length - 199), W = 400, H = 230, L = 44, R = 10, T = 10, B = 24;
     var start = prices.length - N;
     var p = prices.slice(start), m50 = a.s50.slice(start), m200 = a.s200.slice(start);
     var vals = p.concat(m50.filter(Boolean), m200.filter(Boolean));
@@ -338,7 +338,7 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
       s += '<path class="grid" d="M' + L + " " + y(t).toFixed(1) + "H" + (W - R) + '"/>';
       s += '<text class="tick" x="' + (L - 6) + '" y="' + (y(t) + 3).toFixed(1) + '" text-anchor="end">' + fmt(t) + "</text>";
     });
-    [[0, "180 วันก่อน", "start"], [60, "120", "middle"], [120, "60", "middle"], [N - 1, "วันนี้", "end"]].forEach(function (t) {
+    [[0, N + " วันก่อน", "start"], [Math.round((N - 1) / 3), "", "middle"], [Math.round(2 * (N - 1) / 3), "", "middle"], [N - 1, "วันนี้", "end"]].forEach(function (t) {
       s += '<text class="tick" x="' + x(t[0]).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + t[2] + '">' + t[1] + "</text>";
     });
     s += '<path class="l-ma200" d="' + path(m200) + '"/>';
@@ -403,8 +403,16 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
       .finally(function () { clearTimeout(timer); });
   }
   function fromCoinGecko() {
-    return getJSON("https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=400&interval=daily")
+    return getJSON("https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=365&interval=daily")
       .then(function (j) { return { name: "CoinGecko", prices: (j.prices || []).map(function (p) { return p[1]; }) }; });
+  }
+  function fromCoinbase() {
+    return getJSON("https://api.exchange.coinbase.com/products/ETH-USD/candles?granularity=86400")
+      .then(function (j) {
+        if (!Array.isArray(j)) throw new Error((j && j.message) || "รูปแบบข้อมูลไม่ถูกต้อง");
+        var rows = j.slice().sort(function (a, b) { return a[0] - b[0]; });
+        return { name: "Coinbase", prices: rows.map(function (c) { return c[4]; }) };
+      });
   }
   function fromCryptoCompare() {
     return getJSON("https://min-api.cryptocompare.com/data/v2/histoday?fsym=ETH&tsym=USD&limit=400")
@@ -428,24 +436,49 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     bn.dataset.live = "false";
     bn.textContent = "ข้อมูลจำลอง ไม่ใช่ราคา ETH จริง · " + why;
   }
+  function reason(err) {
+    if (!err) return "ผิดพลาด";
+    if (err.name === "AbortError") return "หมดเวลา";
+    if (err.name === "TypeError") return "เชื่อมต่อไม่ได้";
+    return err.message || "ผิดพลาด";
+  }
+  function tryAll() {
+    var errs = [];
+    var srcs = [["CoinGecko", fromCoinGecko], ["Coinbase", fromCoinbase], ["CryptoCompare", fromCryptoCompare]];
+    function step(i) {
+      if (i >= srcs.length) {
+        var e = new Error("all failed");
+        e.details = errs.join(" · ");
+        return Promise.reject(e);
+      }
+      return srcs[i][1]()
+        .then(function (res) {
+          if (!res.prices || res.prices.length < 250) throw new Error("ข้อมูลไม่พอ");
+          return res;
+        })
+        .catch(function (err) {
+          errs.push(srcs[i][0] + ": " + reason(err));
+          return step(i + 1);
+        });
+    }
+    return step(0);
+  }
   function load() {
     var btn = $("liveBtn");
     btn.disabled = true;
     $("banner").dataset.live = "false";
     $("banner").textContent = "กำลังโหลดราคา ETH จริง...";
-    return fromCoinGecko()
-      .catch(function () { return fromCryptoCompare(); })
+    return tryAll()
       .then(function (res) {
-        if (!res.prices || res.prices.length < 250) throw new Error("short");
         var ts = Date.now();
         try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: ts, res: res })); } catch (e) {}
         showReal(res, ts, false);
       })
-      .catch(function () {
+      .catch(function (err) {
         var c = null;
         try { c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch (e) {}
         if (c && c.res && c.res.prices && c.res.prices.length >= 250) showReal(c.res, c.ts, true);
-        else showSample("ดึงข้อมูลไม่สำเร็จ ลองกดรีเฟรชอีกครั้ง");
+        else showSample("ดึงข้อมูลไม่สำเร็จ (" + ((err && err.details) || "ไม่ทราบสาเหตุ") + ") ลองกดรีเฟรชอีกครั้ง");
       })
       .finally(function () { btn.disabled = false; });
   }
