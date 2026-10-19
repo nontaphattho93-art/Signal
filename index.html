@@ -86,7 +86,14 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
 .top h1 { font-size: 22px; font-weight: 600; line-height: 1.2; }
 .top .sub { color: var(--muted); font-size: 13px; }
-.price { font-size: 26px; font-weight: 500; }
+.pricebox { text-align: right; }
+.price { font-size: 26px; font-weight: 500; transition: color 0.6s; }
+.price.up { color: var(--up); }
+.price.down { color: var(--down); }
+.livestate { font-size: 12px; color: var(--muted); }
+.livestate[data-on="true"] { color: var(--up); }
+.livestate[data-on="true"]::before { content: "● "; }
+.changed { font-size: 13px; color: var(--accent); }
 
 .banner {
   background: var(--flat-soft);
@@ -155,7 +162,7 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
       <h1>ETH Signal</h1>
       <p class="sub">Ethereum · ราคาเป็น USD</p>
     </div>
-    <p class="price num" id="price">–</p>
+    <div class="pricebox"><p class="price num" id="price">–</p><p class="livestate" id="liveState" data-on="false" hidden></p></div>
   </header>
 
   <p class="banner" id="banner" data-live="false">กำลังโหลดราคา ETH จริง...</p>
@@ -171,6 +178,7 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     </div>
     <ul class="reasons" id="reasons"></ul>
     <p class="caution" id="caution" hidden></p>
+    <p class="changed" id="changed" hidden></p>
   </section>
 
   <section class="card">
@@ -377,6 +385,7 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
     var gap = (a.last / a.ma50 - 1) * 100;
     $("sGap").textContent = (gap >= 0 ? "+" : "−") + Math.abs(gap).toFixed(1) + "%";
     drawChart(prices, a);
+    return a.kind;
   }
 
   /* ---------- scenario buttons ---------- */
@@ -424,18 +433,122 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
   }
   function showReal(res, ts, cached) {
     $("seg").hidden = true;
-    render(res.prices);
+    var kind = render(res.prices);
+    if (!cached) {
+      history = res.prices.slice();
+      lastLoad = Date.now();
+      lastKind = kind;
+      $("changed").hidden = true;
+      $("liveState").hidden = false;
+      connectWS();
+    } else {
+      history = null;
+      $("liveState").hidden = true;
+    }
     var bn = $("banner");
     bn.dataset.live = "true";
     bn.textContent = (cached ? "ข้อมูลที่บันทึกไว้จาก " : "ข้อมูลจริงจาก ") + res.name + " (ราคารายวัน) · " + clock(ts);
   }
   function showSample(why) {
+    history = null;
+    $("liveState").hidden = true;
     $("seg").hidden = false;
     pick(current);
     var bn = $("banner");
     bn.dataset.live = "false";
     bn.textContent = "ข้อมูลจำลอง ไม่ใช่ราคา ETH จริง · " + why;
   }
+  /* ---------- realtime ---------- */
+  var history = null, ws = null, wsTries = 0, pollTimer = null, pending = false, lastLoad = 0, lastKind = null, reconnectTimer = null;
+  function setLive(on, text) {
+    var el = $("liveState");
+    el.dataset.on = on ? "true" : "false";
+    el.textContent = text;
+  }
+  function applyTick(price) {
+    if (!history || !(price > 0)) return;
+    var prev = history[history.length - 1];
+    history[history.length - 1] = price;
+    pending = true;
+    if (price !== prev) {
+      var pe = $("price");
+      pe.className = "price num " + (price > prev ? "up" : "down");
+      setTimeout(function () { pe.className = "price num"; }, 700);
+    }
+  }
+  setInterval(function () {
+    if (!pending || !history) return;
+    pending = false;
+    var k = render(history);
+    if (lastKind && k !== lastKind) {
+      var ch = $("changed");
+      ch.hidden = false;
+      ch.textContent = "สัญญาณเปลี่ยนจาก " + LABELS[lastKind][0] + " เป็น " + LABELS[k][0] + " เมื่อ " + new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+    lastKind = k;
+  }, 1000);
+  function closeWS() {
+    clearTimeout(reconnectTimer);
+    if (ws) { var w = ws; ws = null; try { w.close(); } catch (e) {} }
+  }
+  function connectWS() {
+    if (!history || document.hidden) return;
+    closeWS();
+    var mine;
+    try { mine = new WebSocket("wss://ws-feed.exchange.coinbase.com"); } catch (e) { startPolling(); return; }
+    ws = mine;
+    if (!pollTimer) setLive(false, "กำลังเชื่อมต่อ...");
+    mine.onopen = function () {
+      mine.send(JSON.stringify({ type: "subscribe", product_ids: ["ETH-USD"], channels: ["ticker"] }));
+    };
+    mine.onmessage = function (ev) {
+      var m;
+      try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.type === "ticker" && m.price) {
+        wsTries = 0;
+        stopPolling();
+        applyTick(parseFloat(m.price));
+        setLive(true, "สด · Coinbase ETH-USD");
+      }
+    };
+    mine.onerror = function () { try { mine.close(); } catch (e) {} };
+    mine.onclose = function () {
+      if (ws !== mine) return;
+      ws = null;
+      wsTries++;
+      if (!pollTimer) setLive(false, "ขาดการเชื่อมต่อ");
+      if (wsTries >= 2) startPolling();
+      if (!document.hidden) reconnectTimer = setTimeout(connectWS, Math.min(30000, 2000 * wsTries));
+    };
+  }
+  function poll() {
+    if (document.hidden || !history) return;
+    getJSON("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd")
+      .then(function (j) {
+        var v = j && j.ethereum && j.ethereum.usd;
+        if (v > 0) { applyTick(v); setLive(true, "อัปเดตทุก 30 วินาที · CoinGecko"); }
+      })
+      .catch(function () { setLive(false, "อัปเดตราคาไม่ได้"); });
+  }
+  function startPolling() {
+    if (pollTimer) return;
+    poll();
+    pollTimer = setInterval(poll, 30000);
+  }
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      closeWS();
+      stopPolling();
+      if (history) setLive(false, "หยุดชั่วคราว");
+    } else if (history) {
+      if (Date.now() - lastLoad > 300000) load();
+      else { wsTries = 0; connectWS(); }
+    }
+  });
+
   function reason(err) {
     if (!err) return "ผิดพลาด";
     if (err.name === "AbortError") return "หมดเวลา";
@@ -466,6 +579,8 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
   function load() {
     var btn = $("liveBtn");
     btn.disabled = true;
+    closeWS();
+    stopPolling();
     $("banner").dataset.live = "false";
     $("banner").textContent = "กำลังโหลดราคา ETH จริง...";
     return tryAll()
