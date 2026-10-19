@@ -219,6 +219,63 @@ rect.cu, rect.cd { stroke: none; }
 .sl-val-atr { color: #f97316; }
 .sl-note { font-size: 12px; color: var(--muted); }
 
+/* zone / signal card */
+.zone-card { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.zone-card.zone-buy  { border-color: var(--up); background: var(--up-soft); }
+.zone-card.zone-sell { border-color: var(--down); background: var(--down-soft); }
+.zone-card.zone-wait { border-color: var(--flat); background: var(--flat-soft); }
+.zone-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.zone-icon { font-size: 28px; line-height: 1; }
+.zone-verdict { flex: 1; }
+.zone-verdict .zw { font-size: 22px; font-weight: 700; line-height: 1.1; }
+.zone-verdict .zt { font-size: 13px; color: var(--muted); }
+.zone-card.zone-buy  .zw { color: var(--up); }
+.zone-card.zone-sell .zw { color: var(--down); }
+.zone-card.zone-wait .zw { color: var(--flat); }
+.zone-score { font-family: var(--font-data); font-size: 13px; font-weight: 600; text-align: right; }
+.zone-card.zone-buy  .zone-score { color: var(--up); }
+.zone-card.zone-sell .zone-score { color: var(--down); }
+.zone-card.zone-wait .zone-score { color: var(--flat); }
+.zone-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.zone-checks li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; }
+.zck { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-top: 1px; }
+.zck-ok   { background: var(--up-soft);   color: var(--up); }
+.zck-fail { background: var(--down-soft); color: var(--down); }
+.zck-skip { background: var(--line);      color: var(--muted); }
+.zone-criteria { display: flex; flex-direction: column; gap: 6px; }
+.zone-criteria-label { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.zone-criteria-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; background: var(--bg); border-radius: 8px; padding: 3px; }
+.zone-criteria-seg button { border: 0; background: transparent; border-radius: 6px; padding: 6px 2px; font-size: 12px; cursor: pointer; color: var(--muted); }
+.zone-criteria-seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+.zone-note { font-size: 12px; color: var(--muted); }
+
+/* SVG signal markers */
+.sig-buy-arrow  { fill: var(--up); }
+.sig-sell-arrow { fill: var(--down); }
+.sig-buy-lbl  { fill: var(--up);   font-family: var(--font-data); font-size: 9px; font-weight: 700; }
+.sig-sell-lbl { fill: var(--down); font-family: var(--font-data); font-size: 9px; font-weight: 700; }
+
+/* asset tabs */
+.asset-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--bg); border-radius: 10px; padding: 4px; }
+.asset-tabs button { border: 0; background: transparent; border-radius: 7px; padding: 9px 4px; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--muted); }
+.asset-tabs button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+
+/* BTC orange */
+:root { --btc: #f7931a; --btc-soft: #fef3e2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --btc: #fb923c; --btc-soft: #3a1f06; } }
+:root[data-theme="dark"] { --btc: #fb923c; --btc-soft: #3a1f06; }
+.l-btc { stroke: var(--btc); stroke-width: 1.6; fill: none; stroke-linejoin: round; }
+.end-dot-btc { fill: var(--btc); }
+.legend .btc::before { border-color: var(--btc); }
+
+/* GOLD amber */
+:root { --gold: #d97706; --gold-soft: #fef3c7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --gold: #fbbf24; --gold-soft: #3a2e0a; } }
+:root[data-theme="dark"] { --gold: #fbbf24; --gold-soft: #3a2e0a; }
+.l-gold { stroke: var(--gold); stroke-width: 1.6; fill: none; stroke-linejoin: round; }
+.end-dot-gold { fill: var(--gold); }
+.legend .g::before { border-color: var(--gold); }
+
 /* footer */
 .foot { color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 10px; }
 .live { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 500; }
@@ -240,11 +297,18 @@ rect.cu, rect.cd { stroke: none; }
     </div>
   </header>
 
+  <!-- Asset tabs -->
+  <div class="asset-tabs" id="assetTabs" role="group" aria-label="เลือกสินทรัพย์">
+    <button type="button" data-asset="eth"  aria-pressed="true">⬡ ETH</button>
+    <button type="button" data-asset="btc"  aria-pressed="false">₿ BTC</button>
+    <button type="button" data-asset="gold" aria-pressed="false">◈ GOLD</button>
+  </div>
+
   <!-- Banner -->
   <p class="banner" id="banner" data-live="false">กำลังโหลดราคา ETH จริง...</p>
 
   <!-- Dual signal summary -->
-  <div class="dual">
+  <div class="dual" id="ethDual">
     <!-- รายวัน -->
     <div class="sig-mini flat" id="miniDay">
       <p class="label">สัญญาณรายวัน</p>
@@ -311,6 +375,28 @@ rect.cu, rect.cd { stroke: none; }
     </div>
   </section>
 
+  <!-- Zone / Signal card -->
+  <section class="zone-card zone-wait" id="zoneCard">
+    <div class="zone-criteria">
+      <p class="zone-criteria-label">เกณฑ์การตัดสิน</p>
+      <div class="zone-criteria-seg" id="critSeg" role="group" aria-label="เกณฑ์">
+        <button type="button" data-crit="fib" aria-pressed="true">Fib+RSI+MACD</button>
+        <button type="button" data-crit="signal" aria-pressed="false">สัญญาณรวม</button>
+        <button type="button" data-crit="ma" aria-pressed="false">MA Cross</button>
+      </div>
+    </div>
+    <div class="zone-top">
+      <div class="zone-icon" id="zoneIcon">⏳</div>
+      <div class="zone-verdict">
+        <p class="zw" id="zoneWord">รอ</p>
+        <p class="zt" id="zoneTh">กำลังวิเคราะห์...</p>
+      </div>
+      <div class="zone-score" id="zoneScore">–</div>
+    </div>
+    <ul class="zone-checks" id="zoneChecks"></ul>
+    <p class="zone-note" id="zoneNote"></p>
+  </section>
+
   <!-- Stop Loss card -->
   <section class="sl-card" id="slCard">
     <p class="label">Stop Loss อ้างอิง</p>
@@ -325,6 +411,71 @@ rect.cu, rect.cd { stroke: none; }
       <span class="sl-val sl-val-atr" id="slAtrVal">–</span>
     </div>
     <p class="sl-note" id="slNote">–</p>
+  </section>
+
+  <!-- Alt-asset panel (BTC / GOLD) — hidden when ETH active -->
+  <section class="card" id="altChartCard" hidden>
+    <div class="seg two" role="group" aria-label="กรอบเวลา" id="altTfSeg">
+      <button type="button" data-tf="1m" aria-pressed="true">แท่งเทียน 1 นาที</button>
+      <button type="button" data-tf="1d" aria-pressed="false">รายวัน</button>
+    </div>
+    <div class="chart-wrap"><svg id="altChart" viewBox="0 0 400 366" role="img" aria-label="กราฟราคา"></svg></div>
+    <div class="legend" id="altLegend"></div>
+  </section>
+
+  <section class="card signal flat" id="altSignalCard" aria-live="polite" hidden>
+    <p class="label" id="altSigLabel">สัญญาณ</p>
+    <div class="verdict">
+      <div><p class="word" id="altWord">–</p><p class="th" id="altTh">–</p></div>
+      <span class="pill num" id="altScore">–</span>
+    </div>
+    <ul class="reasons" id="altReasons"></ul>
+    <p class="caution" id="altCaution" hidden></p>
+    <p class="changed" id="altChanged" hidden></p>
+  </section>
+
+  <section class="card" id="altStatsCard" hidden>
+    <div class="stats">
+      <div class="stat"><span class="v num" id="altRsi">–</span><span class="n">RSI (14)</span></div>
+      <div class="stat"><span class="v num" id="altMacd">–</span><span class="n">MACD hist.</span></div>
+      <div class="stat"><span class="v num" id="altGap">–</span><span class="n" id="altGapLbl">ห่างเฉลี่ย 50</span></div>
+    </div>
+  </section>
+
+  <section class="zone-card zone-wait" id="altZoneCard" hidden>
+    <div class="zone-criteria">
+      <p class="zone-criteria-label">เกณฑ์การตัดสิน</p>
+      <div class="zone-criteria-seg" id="altCritSeg" role="group" aria-label="เกณฑ์">
+        <button type="button" data-crit="fib" aria-pressed="true">Fib+RSI+MACD</button>
+        <button type="button" data-crit="signal" aria-pressed="false">สัญญาณรวม</button>
+        <button type="button" data-crit="ma" aria-pressed="false">MA Cross</button>
+      </div>
+    </div>
+    <div class="zone-top">
+      <div class="zone-icon" id="altZoneIcon">⏳</div>
+      <div class="zone-verdict">
+        <p class="zw" id="altZoneWord">รอ</p>
+        <p class="zt" id="altZoneTh">กำลังวิเคราะห์...</p>
+      </div>
+      <div class="zone-score" id="altZoneScore">–</div>
+    </div>
+    <ul class="zone-checks" id="altZoneChecks"></ul>
+    <p class="zone-note" id="altZoneNote"></p>
+  </section>
+
+  <section class="sl-card" id="altSlCard" hidden>
+    <p class="label" id="altSlTitle">Stop Loss อ้างอิง</p>
+    <div class="sl-row">
+      <div class="sl-dot sl-dot-fib"></div>
+      <span class="sl-name">Fib SL — ใต้ swing low (0%)</span>
+      <span class="sl-val sl-val-fib" id="altSlFib">–</span>
+    </div>
+    <div class="sl-row">
+      <div class="sl-dot sl-dot-atr"></div>
+      <span class="sl-name">ATR SL — ราคาปัจจุบัน − 1.5×ATR(14)</span>
+      <span class="sl-val sl-val-atr" id="altSlAtr">–</span>
+    </div>
+    <p class="sl-note" id="altSlNote">–</p>
   </section>
 
   <section class="foot">
@@ -613,6 +764,496 @@ rect.cu, rect.cd { stroke: none; }
     return s;
   }
 
+  /* ---------- alt asset state (BTC / GOLD) ---------- */
+  var asset = "eth"; /* eth | btc | gold */
+  var altCritMode = "fib";
+
+  /* BTC */
+  var btcDaily = null, btcDailyTs = 0, btcDailyLive = false;
+  var btcMinute = null, btcMinuteTs = 0, btcMinuteErr = "";
+  var loadingBtcD = false, loadingBtcM = false;
+  var BTC_CACHE = "eth-signal-btc-cache-v1";
+
+  /* GOLD */
+  var goldDaily = null, goldDailyTs = 0, goldDailyLive = false, goldErr = "";
+  var loadingGold = false;
+  var GOLD_CACHE = "eth-signal-gold-cache-v1";
+
+  var altTf = "1m"; /* timeframe for alt chart */
+  var altLastKind = { "1m": null, "1d": null };
+
+  /* --- BTC loaders --- */
+  function loadBtcDaily() {
+    if (loadingBtcD) return Promise.resolve();
+    loadingBtcD = true;
+    var srcs = [
+      function() { return getJSON("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily")
+        .then(function(j){ var p=(j.prices||[]).map(function(x){return x[1];}); if(p.length<250)throw new Error("ข้อมูลไม่พอ"); return {name:"CoinGecko",prices:p}; }); },
+      function() { return getJSON("https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400")
+        .then(function(j){ if(!Array.isArray(j))throw new Error("format"); var r=j.slice().sort(function(a,b){return a[0]-b[0];}); return {name:"Coinbase",prices:r.map(function(c){return c[4];})}; }); },
+      function() { return getJSON("https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD&limit=400")
+        .then(function(j){ return {name:"CryptoCompare",prices:j.Data.Data.map(function(d){return d.close;}).filter(function(v){return v>0;})}; }); }
+    ];
+    function tryNext(i, errs) {
+      if (i >= srcs.length) {
+        var c = null; try { c = JSON.parse(localStorage.getItem(BTC_CACHE)||"null"); } catch(e) {}
+        if (c && c.prices && c.prices.length >= 250) { btcDaily=c.prices; btcDailyTs=c.ts; btcDailyLive=false; return Promise.resolve(); }
+        return Promise.resolve();
+      }
+      return srcs[i]().then(function(res){
+        if (!res.prices || res.prices.length < 250) throw new Error("ข้อมูลไม่พอ");
+        btcDaily=res.prices; btcDailyTs=Date.now(); btcDailyLive=true;
+        try { localStorage.setItem(BTC_CACHE, JSON.stringify({ts:btcDailyTs,prices:btcDaily})); } catch(e) {}
+      }).catch(function(){ return tryNext(i+1, errs); });
+    }
+    return tryNext(0, []).finally(function(){ loadingBtcD=false; });
+  }
+
+  function loadBtcMinute() {
+    if (loadingBtcM) return Promise.resolve();
+    loadingBtcM = true;
+    return getJSON("https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=60")
+      .then(function(j){
+        if (!Array.isArray(j)) throw new Error("format");
+        var rows = j.slice().sort(function(a,b){return a[0]-b[0];}).map(function(c){return {t:c[0],l:c[1],h:c[2],o:c[3],c:c[4]};});
+        if (rows.length < 210) throw new Error("ข้อมูลไม่พอ");
+        btcMinute=rows; btcMinuteTs=Date.now(); btcMinuteErr="";
+      }).catch(function(err){ if(!btcMinute) btcMinuteErr=reason(err); })
+      .finally(function(){ loadingBtcM=false; });
+  }
+
+  /* --- GOLD loaders --- */
+  function loadGoldDaily() {
+    if (loadingGold) return Promise.resolve();
+    loadingGold = true;
+    var srcs = [
+      function() { return getJSON("https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=usd&days=365&interval=daily")
+        .then(function(j){ var p=(j.prices||[]).map(function(x){return x[1];}); if(p.length<250)throw new Error("ไม่พอ"); return p; }); },
+      function() { return getJSON("https://api.coingecko.com/api/v3/coins/tether-gold/market_chart?vs_currency=usd&days=365&interval=daily")
+        .then(function(j){ var p=(j.prices||[]).map(function(x){return x[1];}); if(p.length<250)throw new Error("ไม่พอ"); return p; }); },
+      function() { return getJSON("https://min-api.cryptocompare.com/data/v2/histoday?fsym=XAU&tsym=USD&limit=400")
+        .then(function(j){ var p=j.Data.Data.map(function(d){return d.close;}).filter(function(v){return v>0;}); if(p.length<250)throw new Error("ไม่พอ"); return p; }); },
+      function() { return getJSON("https://api.exchange.coinbase.com/products/PAXG-USD/candles?granularity=86400")
+        .then(function(j){ if(!Array.isArray(j))throw new Error("format"); var r=j.slice().sort(function(a,b){return a[0]-b[0];}); var p=r.map(function(c){return c[4];}); if(p.length<250)throw new Error("ไม่พอ"); return p; }); }
+    ];
+    function tryNext(i) {
+      if (i >= srcs.length) {
+        var c=null; try { c=JSON.parse(localStorage.getItem(GOLD_CACHE)||"null"); } catch(e) {}
+        if (c && c.prices && c.prices.length >= 250) { goldDaily=c.prices; goldDailyTs=c.ts; goldDailyLive=false; goldErr=""; }
+        else { goldDaily=null; goldErr="ดึงข้อมูลทองไม่สำเร็จ"; }
+        return Promise.resolve();
+      }
+      return srcs[i]().then(function(prices){
+        goldDaily=prices; goldDailyTs=Date.now(); goldDailyLive=true; goldErr="";
+        try { localStorage.setItem(GOLD_CACHE, JSON.stringify({ts:goldDailyTs,prices:goldDaily})); } catch(e) {}
+      }).catch(function(){ return tryNext(i+1); });
+    }
+    return tryNext(0).finally(function(){ loadingGold=false; });
+  }
+
+  /* --- alt chart helpers --- */
+  function drawAltLine(prices, ser, lineClass, dotClass, svgId) {
+    var svg = $(svgId || "altChart");
+    svg.setAttribute("viewBox", "0 0 400 230");
+    var N=Math.min(180, prices.length-199), W=400, H=230, L=48, R=10, T=10, B=24;
+    var start=prices.length-N;
+    var p=prices.slice(start), m50=ser.s50.slice(start), m200=ser.s200.slice(start);
+    var vals=p.concat(m50.filter(Boolean), m200.filter(Boolean));
+    var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+    var pad=(hi-lo)*0.06; lo-=pad; hi+=pad;
+    var x=function(i){return L+(i/(N-1))*(W-L-R);};
+    var y=function(v){return T+(1-(v-lo)/(hi-lo))*(H-T-B);};
+    var path=function(arr){ var d="",pen=false; for(var i=0;i<arr.length;i++){ if(arr[i]==null)continue; d+=(pen?"L":"M")+x(i).toFixed(1)+" "+y(arr[i]).toFixed(1); pen=true; } return d; };
+    var s="";
+    niceTicks(lo,hi).forEach(function(t){
+      s+='<path class="grid" d="M'+L+" "+y(t).toFixed(1)+"H"+(W-R)+'"/>';
+      s+='<text class="tick" x="'+(L-6)+'" y="'+(y(t)+3).toFixed(1)+'" text-anchor="end">'+fmt(t)+"</text>";
+    });
+    s+='<text class="tick" x="'+L+'" y="'+(H-6)+'" text-anchor="start">'+N+' วันก่อน</text>';
+    s+='<text class="tick" x="'+(W-R)+'" y="'+(H-6)+'" text-anchor="end">ล่าสุด</text>';
+    var fib=calcFib(p); s=drawFibLines(s,fib,y,L,W-R,T,H-B);
+    s+='<path class="l-ma200" d="'+path(m200)+'"/>';
+    s+='<path class="l-ma50" d="'+path(m50)+'"/>';
+    s+='<path class="'+lineClass+'" d="'+path(p)+'"/>';
+    s+='<circle class="'+dotClass+'" cx="'+x(N-1).toFixed(1)+'" cy="'+y(p[N-1]).toFixed(1)+'" r="3.5"/>';
+    var atr=calcATRFromPrices(prices,14), sl=calcSL(fib,p[p.length-1],atr);
+    [{price:sl.fibSL,cls:"sl-fib",lbl:"SL·Fib"},{price:sl.atrSL,cls:"sl-atr",lbl:"SL·ATR"}].forEach(function(slx){
+      var yy=y(slx.price); if(yy<T||yy>H-B)return;
+      s+='<line class="'+slx.cls+'" x1="'+L+'" x2="'+(W-R)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'"/>';
+      s+='<text class="sl-lbl sl-lbl-'+(slx.cls==="sl-fib"?"fib":"atr")+'" x="'+(L+2)+'" y="'+(yy-2).toFixed(1)+'">'+slx.lbl+"</text>";
+    });
+    if(window._altZoneResult) s=drawZoneMarkerLine(s,window._altZoneResult,p[p.length-1],y,W-R-8,W,R,T,H-B);
+    svg.innerHTML=s;
+    return {fib:fib,atr:atr,sl:sl};
+  }
+
+  function renderAltSignal(a, unit, tf2) {
+    $("altSignalCard").className="card signal "+a.kind;
+    $("altWord").textContent=LABELS[a.kind][0];
+    $("altTh").textContent=LABELS[a.kind][1];
+    $("altScore").textContent="คะแนน "+signed(a.score)+" / 4";
+    var ul=$("altReasons"); ul.textContent="";
+    a.votes.forEach(function(v){
+      var li=document.createElement("li");
+      var b=document.createElement("span"); b.className="vote "+(v.v>0?"up":v.v<0?"down":"flat"); b.textContent=signed(v.v);
+      var t=document.createElement("span"); t.textContent=v.t;
+      li.appendChild(b); li.appendChild(t); ul.appendChild(li);
+    });
+    var c=$("altCaution"); c.hidden=!a.caution; c.textContent=a.caution;
+    $("altRsi").textContent=a.rsi.toFixed(1);
+    $("altMacd").textContent=(a.hist>=0?"+":"−")+Math.abs(a.hist).toFixed(2);
+    var gap=(a.last/a.ma50-1)*100;
+    $("altGap").textContent=(gap>=0?"+":"−")+Math.abs(gap).toFixed(2)+"%";
+    $("altGapLbl").textContent="ห่างเฉลี่ย 50 "+unit;
+    $("altSigLabel").textContent="รายละเอียดสัญญาณ"+(tf2==="1m"?" 1 นาที":" รายวัน");
+  }
+
+  function renderAltEmpty(msg) {
+    $("altSignalCard").className="card signal flat";
+    $("altWord").textContent="–"; $("altTh").textContent=msg; $("altScore").textContent="–";
+    $("altReasons").textContent=""; $("altCaution").hidden=true;
+    $("altRsi").textContent="–"; $("altMacd").textContent="–"; $("altGap").textContent="–";
+    $("altChart").setAttribute("viewBox","0 0 400 120");
+    $("altChart").innerHTML='<text class="tick" x="200" y="64" text-anchor="middle" style="font-size:12px">'+msg+"</text>";
+  }
+
+  function renderAltZone(a, fib) {
+    var old=critMode; critMode=altCritMode;
+    window._altZoneResult=evalZone(a,fib,[]);
+    critMode=old;
+    var r=window._altZoneResult;
+    var card=$("altZoneCard");
+    card.className="zone-card zone-"+r.zone;
+    var icons={buy:"🟢",sell:"🔴",wait:"🟡"};
+    var words={buy:"โซนซื้อ",sell:"โซนขาย",wait:"รอดูก่อน"};
+    var ths={buy:"สัญญาณเอื้อต่อการซื้อ",sell:"สัญญาณเอื้อต่อการขาย",wait:"ยังไม่มีสัญญาณชัด"};
+    $("altZoneIcon").textContent=icons[r.zone];
+    $("altZoneWord").textContent=words[r.zone];
+    $("altZoneTh").textContent=ths[r.zone];
+    $("altZoneScore").textContent=r.score+" / "+r.total;
+    var ul=$("altZoneChecks"); ul.textContent="";
+    r.checks.forEach(function(c){
+      var li=document.createElement("li");
+      var dot=document.createElement("span"); dot.className="zck "+(c.ok===1?"zck-ok":"zck-fail"); dot.textContent=c.ok===1?"✓":"✗";
+      var txt=document.createElement("span"); txt.textContent=c.text;
+      li.appendChild(dot); li.appendChild(txt); ul.appendChild(li);
+    });
+    $("altZoneNote").textContent=r.note;
+  }
+
+  function updateAltSL(fib, price, atr) {
+    var sl=calcSL(fib,price,atr);
+    $("altSlFib").textContent="$"+fmt(sl.fibSL,2);
+    $("altSlAtr").textContent="$"+fmt(sl.atrSL,2);
+    var dist=((price-sl.recommended)/price*100).toFixed(1);
+    $("altSlNote").textContent="SL แนะนำ: $"+fmt(sl.recommended,2)+" (ห่าง "+dist+"%) · ATR="+fmt(atr,2);
+  }
+
+  var ALT_LEG = {
+    btc: {
+      "1m": '<span class="btc">BTC แท่งเทียน</span><span class="b">MA 50</span><span class="c">MA 200</span><span class="fr">Fib</span><span class="sf">SL·Fib</span><span class="sa">SL·ATR</span>',
+      "1d": '<span class="btc">BTC ราคา</span><span class="b">MA 50 วัน</span><span class="c">MA 200 วัน</span><span class="fr">Fib</span><span class="sf">SL·Fib</span><span class="sa">SL·ATR</span>'
+    },
+    gold: {
+      "1d": '<span class="g">GOLD ราคา</span><span class="b">MA 50 วัน</span><span class="c">MA 200 วัน</span><span class="fr">Fib</span><span class="sf">SL·Fib</span><span class="sa">SL·ATR</span>'
+    }
+  };
+
+  function redrawAlt() {
+    var name=asset.toUpperCase();
+    $("altTfSeg").hidden = (asset==="gold"); /* GOLD ไม่มี 1 นาที */
+    document.querySelector(".top .sub").textContent =
+      asset==="btc" ? "Bitcoin · ราคาเป็น USD" :
+      asset==="gold" ? "Gold (XAU) · ราคาเป็น USD / oz" : "Ethereum · ราคาเป็น USD";
+
+    /* GOLD: daily only */
+    if (asset==="gold") {
+      $("altLegend").innerHTML=ALT_LEG.gold["1d"]||"";
+      if (goldDaily && goldDaily.length>=250) {
+        var ag=analyze(goldDaily,"วัน");
+        var fibG=calcFib(goldDaily.slice(Math.max(0,goldDaily.length-180)));
+        renderAltZone(ag,fibG);
+        renderAltSignal(ag,"วัน","1d");
+        var gd=drawAltLine(goldDaily,ag.ser,"l-gold","end-dot-gold");
+        updateAltSL(gd.fib,goldDaily[goldDaily.length-1],gd.atr);
+        $("price").textContent="$"+fmt(goldDaily[goldDaily.length-1],2);
+      } else {
+        window._altZoneResult=null;
+        renderAltEmpty(loadingGold?"กำลังโหลดข้อมูลทอง...":(goldErr||"ยังไม่มีข้อมูลทอง"));
+        $("altSlFib").textContent="–"; $("altSlAtr").textContent="–"; $("altSlNote").textContent="–";
+      }
+      updateAltBanner();
+      return;
+    }
+
+    /* BTC: 1m or 1d */
+    $("altLegend").innerHTML=ALT_LEG.btc[altTf]||"";
+    Array.prototype.forEach.call($("altTfSeg").querySelectorAll("button"),function(b){
+      b.setAttribute("aria-pressed",b.getAttribute("data-tf")===altTf?"true":"false");
+    });
+
+    if (altTf==="1m") {
+      if (btcMinute && btcMinute.length>=210) {
+        var closes=btcMinute.map(function(c){return c.c;});
+        var ab=analyze(closes,"แท่ง");
+        var fibB=calcFib(closes.slice(Math.max(0,closes.length-60)));
+        renderAltZone(ab,fibB);
+        renderAltSignal(ab,"แท่ง","1m");
+        /* วาดแท่งเทียน BTC โดยใช้ drawCandles เดิม แต่ target svg "altChart" */
+        var savedChart=$("chart"); /* swap svg temporarily */
+        var altSvg=$("altChart");
+        altSvg.id="chart";
+        savedChart.id="chart-eth-hidden";
+        drawCandles(btcMinute,ab.ser);
+        /* restore */
+        altSvg.id="altChart";
+        savedChart.id="chart";
+        var fibBSL=calcFib(btcMinute.slice(btcMinute.length-Math.min(60,btcMinute.length)).map(function(c){return c.c;}));
+        var atrBSL=calcATR(btcMinute.slice(Math.max(0,btcMinute.length-60)),14);
+        updateAltSL(fibBSL,btcMinute[btcMinute.length-1].c,atrBSL);
+        $("price").textContent="$"+fmt(btcMinute[btcMinute.length-1].c,2);
+      } else {
+        window._altZoneResult=null;
+        renderAltEmpty(loadingBtcM?"กำลังโหลด BTC 1 นาที...":"ยังไม่มีข้อมูล BTC 1 นาที");
+        $("altSlFib").textContent="–"; $("altSlAtr").textContent="–"; $("altSlNote").textContent="–";
+      }
+    } else {
+      if (btcDaily && btcDaily.length>=250) {
+        var ab2=analyze(btcDaily,"วัน");
+        var pSl=btcDaily.slice(Math.max(0,btcDaily.length-180));
+        var fibB2=calcFib(pSl);
+        renderAltZone(ab2,fibB2);
+        renderAltSignal(ab2,"วัน","1d");
+        var bd=drawAltLine(btcDaily,ab2.ser,"l-btc","end-dot-btc");
+        updateAltSL(bd.fib,btcDaily[btcDaily.length-1],bd.atr);
+        $("price").textContent="$"+fmt(btcDaily[btcDaily.length-1],2);
+      } else {
+        window._altZoneResult=null;
+        renderAltEmpty(loadingBtcD?"กำลังโหลดข้อมูล BTC...":"ยังไม่มีข้อมูล BTC");
+        $("altSlFib").textContent="–"; $("altSlAtr").textContent="–"; $("altSlNote").textContent="–";
+      }
+    }
+    updateAltBanner();
+  }
+
+  function updateAltBanner() {
+    var bn=$("banner"), live=false, txt="";
+    if (asset==="btc") {
+      if (altTf==="1m") {
+        if (btcMinute) { live=true; txt="ข้อมูลจริง · BTC แท่งเทียน 1 นาที จาก Coinbase · โหลดเมื่อ "+clock(btcMinuteTs); }
+        else txt="กำลังโหลด BTC 1 นาที...";
+      } else {
+        if (btcDaily) { live=btcDailyLive; txt=(btcDailyLive?"ข้อมูลจริง · ":"ข้อมูลที่บันทึกไว้ · ")+"BTC รายวัน · โหลดเมื่อ "+clock(btcDailyTs); }
+        else txt="กำลังโหลดข้อมูล BTC...";
+      }
+    } else {
+      if (goldDaily) { live=goldDailyLive; txt=(goldDailyLive?"ข้อมูลจริง · ":"ข้อมูลที่บันทึกไว้ · ")+"Gold (XAU) รายวัน · โหลดเมื่อ "+clock(goldDailyTs); }
+      else txt=loadingGold?"กำลังโหลดข้อมูลทอง...":(goldErr||"ดึงข้อมูลทองไม่สำเร็จ");
+    }
+    bn.dataset.live=live?"true":"false"; bn.textContent=txt;
+  }
+
+  /* --- asset switching --- */
+  function switchAsset(a) {
+    asset=a;
+    Array.prototype.forEach.call($("assetTabs").querySelectorAll("button"),function(b){
+      b.setAttribute("aria-pressed",b.getAttribute("data-asset")===a?"true":"false");
+    });
+    var isEth=(a==="eth");
+    /* ETH elements */
+    $("chart").parentElement.hidden=!isEth;
+    $("signalCard").hidden=!isEth;
+    $("signalCard").nextElementSibling.hidden=!isEth; /* stats card */
+    $("zoneCard").hidden=!isEth;
+    $("slCard").hidden=!isEth;
+    $("liveState").hidden=!isEth||!(minute||dailyLive);
+    /* ETH dual mini */
+    $("ethDual").hidden=!isEth;
+    /* alt elements */
+    $("altChartCard").hidden=isEth;
+    $("altSignalCard").hidden=isEth;
+    $("altStatsCard").hidden=isEth;
+    $("altZoneCard").hidden=isEth;
+    $("altSlCard").hidden=isEth;
+
+    if (isEth) {
+      document.querySelector(".top .sub").textContent="Ethereum · ราคาเป็น USD";
+      view();
+    } else {
+      window._zoneResult=null; window._altZoneResult=null;
+      /* โหลดข้อมูลถ้ายังไม่มี */
+      var jobs=[];
+      if (a==="btc") {
+        if (!btcDaily && !loadingBtcD) jobs.push(loadBtcDaily());
+        if (!btcMinute && !loadingBtcM) jobs.push(loadBtcMinute());
+      } else if (a==="gold") {
+        if (!goldDaily && !loadingGold) jobs.push(loadGoldDaily());
+      }
+      if (jobs.length) {
+        $("banner").dataset.live="false";
+        $("banner").textContent="กำลังโหลดข้อมูล "+a.toUpperCase()+"...";
+        Promise.all(jobs).then(function(){ redrawAlt(); });
+      } else {
+        redrawAlt();
+      }
+    }
+  }
+
+  /* ---------- zone / signal engine ---------- */
+  var critMode = "fib"; /* fib | signal | ma */
+
+  /* คืน { zone, score, checks, note }
+     zone = "buy" | "sell" | "wait"
+     checks = [{ok, text}]  */
+  function evalZone(a, fib, prices) {
+    var checks = [], score = 0, total = 0;
+
+    if (critMode === "fib") {
+      /* เกณฑ์ 1: ราคาอยู่ใน Golden Zone 38.2–61.8% (uptrend retracement) */
+      var inGolden = false, fibPos = "–";
+      if (fib && fib.uptrend) {
+        var p = a.last;
+        var lo382 = fib.levels[0.382], hi618 = fib.levels[0.618];
+        /* ใน uptrend retracement: 61.8 < 38.2 ในสเกล Y */
+        var fibLo = Math.min(lo382, hi618), fibHi = Math.max(lo382, hi618);
+        inGolden = p >= fibLo && p <= fibHi;
+        /* หาระดับที่ใกล้ที่สุด */
+        var allLevels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+        var nearest = allLevels.reduce(function(best, r) {
+          return Math.abs(fib.levels[r] - p) < Math.abs(fib.levels[best] - p) ? r : best;
+        }, allLevels[0]);
+        fibPos = "ใกล้ Fib " + (nearest * 100).toFixed(1) + "%";
+      }
+      var fibOk = inGolden ? 1 : 0;
+      score += fibOk; total++;
+      checks.push({ ok: fibOk, text: inGolden ? "ราคาอยู่ใน Golden Zone (38.2–61.8%) · " + fibPos : "ราคาอยู่นอก Golden Zone · " + fibPos });
+
+      /* เกณฑ์ 2: RSI 45–70 (ไม่ oversold ไม่ overbought) */
+      var rsiOk = (a.rsi >= 45 && a.rsi <= 70) ? 1 : 0;
+      score += rsiOk; total++;
+      checks.push({ ok: rsiOk, text: "RSI " + a.rsi.toFixed(1) + (rsiOk ? " · อยู่ในโซนปกติ" : (a.rsi < 45 ? " · อ่อนแอเกินไป" : " · Overbought")) });
+
+      /* เกณฑ์ 3: MACD histogram บวก */
+      var macdOk = a.hist > 0 ? 1 : 0;
+      score += macdOk; total++;
+      checks.push({ ok: macdOk, text: "MACD " + (a.hist >= 0 ? "+" : "−") + Math.abs(a.hist).toFixed(2) + (macdOk ? " · momentum ขาขึ้น" : " · momentum ขาลง") });
+
+      /* เกณฑ์ 4: MA 50 > MA 200 */
+      var maOk = (a.ma50 != null && a.ma200 != null && a.ma50 > a.ma200) ? 1 : 0;
+      score += maOk; total++;
+      checks.push({ ok: maOk, text: maOk ? "MA 50 อยู่เหนือ MA 200 · Uptrend" : "MA 50 ต่ำกว่า MA 200 · Downtrend" });
+
+      var zone = score >= 3 ? "buy" : score <= 1 ? "sell" : "wait";
+      var noteMap = {
+        buy: "ผ่าน " + score + "/" + total + " เกณฑ์ · โอกาสขึ้นต่อสูง ตั้ง SL ใต้ swing low",
+        sell: "ผ่าน " + score + "/" + total + " เกณฑ์ · สัญญาณอ่อน รอหรือระวัง",
+        wait: "ผ่าน " + score + "/" + total + " เกณฑ์ · ยังไม่ชัดเจน รอยืนยันเพิ่ม"
+      };
+      return { zone: zone, score: score, total: total, checks: checks, note: noteMap[zone] };
+
+    } else if (critMode === "signal") {
+      /* ใช้ระบบ score ที่มีอยู่แล้ว */
+      var s = a.score; /* −4 ถึง +4 */
+      checks.push({ ok: a.votes[0].v > 0 ? 1 : 0, text: a.votes[0].t });
+      checks.push({ ok: a.votes[1].v > 0 ? 1 : 0, text: a.votes[1].t });
+      checks.push({ ok: a.votes[2].v >= 0 ? 1 : 0, text: a.votes[2].t });
+      checks.push({ ok: a.votes[3].v > 0 ? 1 : 0, text: a.votes[3].t });
+      var zone2 = s >= 2 ? "buy" : s <= -2 ? "sell" : "wait";
+      return { zone: zone2, score: s, total: 4,
+        checks: checks,
+        note: "คะแนนรวม " + (s > 0 ? "+" : "") + s + " / 4 · " + (zone2 === "buy" ? "Bullish" : zone2 === "sell" ? "Bearish" : "Neutral") };
+
+    } else { /* ma */
+      /* MA Cross + ราคาเทียบ MA */
+      var goldenCross = a.ma50 > a.ma200;
+      var aboveMa50 = a.last > a.ma50;
+      var aboveMa200 = a.last > a.ma200;
+      var rsiNotOB = a.rsi < 70;
+      var macdPos = a.hist > 0;
+      checks.push({ ok: goldenCross ? 1 : 0, text: goldenCross ? "MA50 > MA200 · Golden Cross" : "MA50 < MA200 · Death Cross" });
+      checks.push({ ok: aboveMa50 ? 1 : 0, text: aboveMa50 ? "ราคาอยู่เหนือ MA50" : "ราคาต่ำกว่า MA50" });
+      checks.push({ ok: aboveMa200 ? 1 : 0, text: aboveMa200 ? "ราคาอยู่เหนือ MA200" : "ราคาต่ำกว่า MA200" });
+      checks.push({ ok: macdPos ? 1 : 0, text: macdPos ? "MACD momentum บวก" : "MACD momentum ลบ" });
+      var sc3 = (goldenCross ? 1 : 0) + (aboveMa50 ? 1 : 0) + (aboveMa200 ? 1 : 0) + (macdPos ? 1 : 0);
+      var z3 = sc3 >= 3 ? "buy" : sc3 <= 1 ? "sell" : "wait";
+      return { zone: z3, score: sc3, total: 4, checks: checks,
+        note: sc3 >= 3 ? "MA structure แข็งแกร่ง โซนซื้อ" : sc3 <= 1 ? "MA structure อ่อนแอ ระวัง" : "MA structure กลางๆ รอยืนยัน" };
+    }
+  }
+
+  function renderZoneCard(result) {
+    var card = $("zoneCard");
+    card.className = "zone-card zone-" + result.zone;
+    var icons = { buy: "🟢", sell: "🔴", wait: "🟡" };
+    var words = { buy: "โซนซื้อ", sell: "โซนขาย", wait: "รอดูก่อน" };
+    var ths   = { buy: "สัญญาณเอื้อต่อการซื้อ", sell: "สัญญาณเอื้อต่อการขาย/หลีกเลี่ยง", wait: "ยังไม่มีสัญญาณชัดเจน" };
+    $("zoneIcon").textContent  = icons[result.zone];
+    $("zoneWord").textContent  = words[result.zone];
+    $("zoneTh").textContent    = ths[result.zone];
+    $("zoneScore").textContent = result.score + " / " + result.total;
+    var ul = $("zoneChecks"); ul.textContent = "";
+    result.checks.forEach(function (c) {
+      var li = document.createElement("li");
+      var dot = document.createElement("span");
+      dot.className = "zck " + (c.ok === 1 ? "zck-ok" : c.ok === 0 ? "zck-fail" : "zck-skip");
+      dot.textContent = c.ok === 1 ? "✓" : c.ok === 0 ? "✗" : "–";
+      var txt = document.createElement("span");
+      txt.textContent = c.text;
+      li.appendChild(dot); li.appendChild(txt);
+      ul.appendChild(li);
+    });
+    $("zoneNote").textContent = result.note;
+  }
+
+  /* วาด BUY/SELL marker บนกราฟเส้นรายวัน */
+  function drawZoneMarkerLine(s, result, currentPrice, yFn, xRight, W, R, T, HB) {
+    if (result.zone === "wait") return s;
+    var isBuy = result.zone === "buy";
+    var yy = yFn(currentPrice);
+    /* วาดสามเหลี่ยมชี้ขึ้น (buy) หรือชี้ลง (sell) ที่ขอบขวาสุดของกราฟ */
+    var arrowSize = 7;
+    var ax = xRight - 2;
+    var ay = Math.min(HB - arrowSize - 2, Math.max(T + arrowSize + 2, yy));
+    var arrowPath, lblY;
+    if (isBuy) {
+      arrowPath = "M" + ax + " " + (ay + arrowSize) + " L" + (ax - arrowSize) + " " + (ay - arrowSize) + " L" + (ax + arrowSize) + " " + (ay - arrowSize) + "Z";
+      lblY = ay - arrowSize - 3;
+      s += '<path class="sig-buy-arrow" d="' + arrowPath + '"/>';
+      s += '<text class="sig-buy-lbl" x="' + ax + '" y="' + lblY + '" text-anchor="middle">BUY</text>';
+    } else {
+      arrowPath = "M" + ax + " " + (ay - arrowSize) + " L" + (ax - arrowSize) + " " + (ay + arrowSize) + " L" + (ax + arrowSize) + " " + (ay + arrowSize) + "Z";
+      lblY = ay + arrowSize + 9;
+      s += '<path class="sig-sell-arrow" d="' + arrowPath + '"/>';
+      s += '<text class="sig-sell-lbl" x="' + ax + '" y="' + lblY + '" text-anchor="middle">SELL</text>';
+    }
+    return s;
+  }
+
+  /* วาด BUY/SELL marker บนกราฟแท่งเทียน */
+  function drawZoneMarkerCandle(s, result, lastC, Yfn, xPos, yT, yB) {
+    if (result.zone === "wait") return s;
+    var isBuy = result.zone === "buy";
+    var baseY = isBuy ? Yfn(lastC.l) : Yfn(lastC.h);
+    var arrowSize = 6;
+    var ax = xPos;
+    var ay = isBuy
+      ? Math.min(yB - arrowSize - 2, baseY + arrowSize + 4)
+      : Math.max(yT + arrowSize + 2, baseY - arrowSize - 4);
+    var arrowPath, lblY;
+    if (isBuy) {
+      arrowPath = "M" + ax + " " + (ay - arrowSize) + " L" + (ax - arrowSize) + " " + (ay + arrowSize) + " L" + (ax + arrowSize) + " " + (ay + arrowSize) + "Z";
+      lblY = ay - arrowSize - 2;
+      s += '<path class="sig-buy-arrow" d="' + arrowPath + '"/>';
+      s += '<text class="sig-buy-lbl" x="' + ax + '" y="' + lblY + '" text-anchor="middle">BUY</text>';
+    } else {
+      arrowPath = "M" + ax + " " + (ay + arrowSize) + " L" + (ax - arrowSize) + " " + (ay - arrowSize) + " L" + (ax + arrowSize) + " " + (ay - arrowSize) + "Z";
+      lblY = ay + arrowSize + 8;
+      s += '<path class="sig-sell-arrow" d="' + arrowPath + '"/>';
+      s += '<text class="sig-sell-lbl" x="' + ax + '" y="' + lblY + '" text-anchor="middle">SELL</text>';
+    }
+    return s;
+  }
+
   function drawLine(prices, ser) {
     var svg = $("chart");
     svg.setAttribute("viewBox", "0 0 400 230");
@@ -662,6 +1303,10 @@ rect.cu, rect.cd { stroke: none; }
       s += '<line class="' + sl.cls + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>';
       s += '<text class="' + sl.lblCls + '" x="' + (L + 2) + '" y="' + (yy - 2).toFixed(1) + '">' + sl.label + '</text>';
     });
+    /* zone marker */
+    if (window._zoneResult) {
+      s = drawZoneMarkerLine(s, window._zoneResult, p[p.length - 1], y, W - R - 8, W, R, T, H - B);
+    }
     svg.innerHTML = s;
     return slD;
   }
@@ -772,6 +1417,11 @@ rect.cu, rect.cd { stroke: none; }
       s += '<text class="sl-tag-txt" x="' + (W - R + 1 + (R - 3) / 2) + '" y="' + (tagY + 2.5).toFixed(1) + '" text-anchor="middle">' + sl.label + '</text>';
     });
 
+    /* zone marker บน candle ล่าสุด */
+    if (window._zoneResult) {
+      s = drawZoneMarkerCandle(s, window._zoneResult, lastC, Y, X(N - 1), yT, yB);
+    }
+
     for (i = 7; i < N; i += 15) {
       s += '<text class="tick" x="' + X(i).toFixed(1) + '" y="' + (yB + 14) + '" text-anchor="middle">' + hhmm(cs[st + i].t) + "</text>";
     }
@@ -866,14 +1516,18 @@ rect.cu, rect.cd { stroke: none; }
       if (minute && minute.length >= 210) {
         var closes = minute.map(function (c) { return c.c; });
         var a = analyze(closes, "แท่ง");
+        /* คำนวณ zone ก่อนวาดกราฟ */
+        var fibZ1m = calcFib(closes.slice(Math.max(0, closes.length - 60)));
+        window._zoneResult = evalZone(a, fibZ1m, closes);
+        renderZoneCard(window._zoneResult);
         renderSignal(a, "แท่ง");
         drawCandles(minute, a.ser);
-        /* อัปเดต SL card: ใช้ข้อมูลจาก fib และ ATR ของ 1 นาที */
         var fib1mSL = calcFib(minute.slice(minute.length - Math.min(60, minute.length)).map(function(c){ return c.c; }));
         var atr1mSL = calcATR(minute.slice(Math.max(0, minute.length - 60)), 14);
         updateSLCard(fib1mSL, minute[minute.length-1].c, atr1mSL, "1m");
         kind = a.kind;
       } else {
+        window._zoneResult = null;
         renderEmpty(loading.m ? "กำลังโหลดกราฟ 1 นาที..." : "ยังไม่มีข้อมูลกราฟ 1 นาที");
         $("slFibVal").textContent = "–"; $("slAtrVal").textContent = "–"; $("slNote").textContent = "–";
       }
@@ -881,16 +1535,20 @@ rect.cu, rect.cd { stroke: none; }
       var arr = daily || (sampleMode ? simulate(sampleKind) : null);
       if (arr && arr.length >= 250) {
         var a2 = analyze(arr, "วัน");
+        /* คำนวณ zone ก่อนวาดกราฟ */
+        var pSlice = arr.slice(Math.max(0, arr.length - 180));
+        var fibZD = calcFib(pSlice);
+        window._zoneResult = evalZone(a2, fibZD, arr);
+        renderZoneCard(window._zoneResult);
         renderSignal(a2, "วัน");
         drawLine(arr, a2.ser);
-        /* อัปเดต SL card: ใช้ข้อมูลจาก fib และ ATR รายวัน */
-        var pSlice = arr.slice(Math.max(0, arr.length - 180));
-        var fibDSL = calcFib(pSlice);
+        var fibDSL = fibZD;
         var atrDSL = calcATRFromPrices(arr, 14);
         updateSLCard(fibDSL, arr[arr.length-1], atrDSL, "วัน");
         kind = a2.kind;
         if (!head) head = a2.last;
       } else {
+        window._zoneResult = null;
         renderEmpty(loading.d ? "กำลังโหลดข้อมูลรายวัน..." : "ยังไม่มีข้อมูลรายวัน");
         $("slFibVal").textContent = "–"; $("slAtrVal").textContent = "–"; $("slNote").textContent = "–";
       }
@@ -934,6 +1592,41 @@ rect.cu, rect.cd { stroke: none; }
   }
 
   /* ---------- user controls ---------- */
+  $("assetTabs").addEventListener("click", function(e) {
+    var b=e.target.closest("button"); if(!b)return;
+    switchAsset(b.getAttribute("data-asset"));
+  });
+
+  $("altTfSeg").addEventListener("click", function(e) {
+    var b=e.target.closest("button"); if(!b)return;
+    altTf=b.getAttribute("data-tf");
+    altLastKind[altTf]=null; $("altChanged").hidden=true;
+    /* โหลด BTC minute ถ้ายังไม่มี */
+    if (altTf==="1m" && !btcMinute && !loadingBtcM) {
+      loadBtcMinute().then(function(){ redrawAlt(); });
+    } else { redrawAlt(); }
+  });
+
+  $("altCritSeg").addEventListener("click", function(e) {
+    var b=e.target.closest("button"); if(!b)return;
+    altCritMode=b.getAttribute("data-crit");
+    Array.prototype.forEach.call($("altCritSeg").querySelectorAll("button"),function(x){
+      x.setAttribute("aria-pressed",x===b?"true":"false");
+    });
+    window._altZoneResult=null; redrawAlt();
+  });
+
+  $("critSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    critMode = b.getAttribute("data-crit");
+    Array.prototype.forEach.call($("critSeg").querySelectorAll("button"), function (x) {
+      x.setAttribute("aria-pressed", x === b ? "true" : "false");
+    });
+    window._zoneResult = null;
+    redraw();
+  });
+
   $("tfSeg").addEventListener("click", function (e) {
     var b = e.target.closest("button");
     if (!b) return;
@@ -1060,7 +1753,22 @@ rect.cu, rect.cd { stroke: none; }
       })
       .finally(function () { btn.disabled = false; });
   }
-  $("liveBtn").addEventListener("click", load);
+  $("liveBtn").addEventListener("click", function() {
+    if (asset==="btc") {
+      var btn=$("liveBtn"); btn.disabled=true;
+      btcDaily=null; btcMinute=null;
+      var jobs=[loadBtcDaily(), loadBtcMinute()];
+      $("banner").dataset.live="false"; $("banner").textContent="กำลังโหลดข้อมูล BTC...";
+      Promise.all(jobs).then(function(){ redrawAlt(); btn.disabled=false; });
+    } else if (asset==="gold") {
+      var btn2=$("liveBtn"); btn2.disabled=true;
+      goldDaily=null;
+      $("banner").dataset.live="false"; $("banner").textContent="กำลังโหลดข้อมูลทอง...";
+      loadGoldDaily().then(function(){ redrawAlt(); btn2.disabled=false; });
+    } else {
+      load();
+    }
+  });
 
   /* ---------- realtime ---------- */
   var ws = null, wsTries = 0, pollTimer = null, reconnectTimer = null;
@@ -1096,6 +1804,7 @@ rect.cu, rect.cd { stroke: none; }
   setInterval(function () {
     if (!pending) return;
     pending = false;
+    if (asset !== "eth") { redrawAlt(); return; }
     updateDualCards();
     var k = redraw();
     if (k && lastKind[tf] && k !== lastKind[tf]) {
@@ -1118,7 +1827,7 @@ rect.cu, rect.cd { stroke: none; }
     ws = mine;
     if (!pollTimer) setLive(false, "กำลังเชื่อมต่อ...");
     mine.onopen = function () {
-      mine.send(JSON.stringify({ type: "subscribe", product_ids: ["ETH-USD"], channels: ["ticker"] }));
+      mine.send(JSON.stringify({ type: "subscribe", product_ids: ["ETH-USD", "BTC-USD"], channels: ["ticker"] }));
       if (wsTries > 0) loadMinute().then(function () { pending = true; });
     };
     mine.onmessage = function (ev) {
@@ -1129,8 +1838,24 @@ rect.cu, rect.cd { stroke: none; }
         stopPolling();
         var tms = m.time ? Date.parse(m.time) : Date.now();
         if (!(tms > 0)) tms = Date.now();
-        onTick(parseFloat(m.price), tms);
-        setLive(true, "สด · Coinbase ETH-USD");
+        var px = parseFloat(m.price);
+        if (m.product_id === "ETH-USD") {
+          onTick(px, tms);
+          if (asset === "eth") setLive(true, "สด · Coinbase ETH-USD");
+        } else if (m.product_id === "BTC-USD") {
+          /* อัปเดต BTC minute realtime */
+          if (btcMinute) {
+            var lastB = btcMinute[btcMinute.length - 1];
+            var mb = Math.floor(tms / 60000) * 60;
+            if (mb === lastB.t) { lastB.c=px; if(px>lastB.h)lastB.h=px; if(px<lastB.l)lastB.l=px; }
+            else if (mb > lastB.t) { btcMinute.push({t:mb,o:px,h:px,l:px,c:px}); if(btcMinute.length>600)btcMinute.shift(); }
+          }
+          if (btcDaily && btcDailyLive) btcDaily[btcDaily.length-1]=px;
+          if (asset === "btc") {
+            pending = true;
+            setLive(true, "สด · Coinbase BTC-USD");
+          }
+        }
       }
     };
     mine.onerror = function () { try { mine.close(); } catch (e) {} };
