@@ -12,7 +12,6 @@
 <title>ETH Signal</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
 <style>
-/* Layout: one narrow column built for a phone. Signal card first, then chart, then the three indicators. */
 :root {
   --bg: #f1f4f8;
   --surface: #ffffff;
@@ -79,10 +78,11 @@ body {
 main { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 h1, h2, p { margin: 0; }
 .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
-.label { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.label { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 button { font: inherit; color: inherit; }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* header */
 .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
 .top h1 { font-size: 22px; font-weight: 600; line-height: 1.2; }
 .top .sub { color: var(--muted); font-size: 13px; }
@@ -95,6 +95,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .livestate[data-on="true"]::before { content: "● "; }
 .changed { font-size: 13px; color: var(--accent); }
 
+/* banner */
 .banner {
   background: var(--flat-soft);
   color: var(--flat);
@@ -105,8 +106,25 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 .banner[data-live="true"] { background: var(--up-soft); color: var(--up); }
 
+/* cards */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
+/* dual signal row */
+.dual { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sig-mini { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sig-mini .label { font-size: 11px; }
+.sig-mini .word { font-size: 22px; font-weight: 600; line-height: 1.1; }
+.sig-mini .th { font-size: 12px; color: var(--muted); }
+.sig-mini .pill { border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600; align-self: flex-start; }
+.sig-mini.up .word { color: var(--up); } .sig-mini.up .pill { background: var(--up-soft); color: var(--up); }
+.sig-mini.down .word { color: var(--down); } .sig-mini.down .pill { background: var(--down-soft); color: var(--down); }
+.sig-mini.flat .word { color: var(--flat); } .sig-mini.flat .pill { background: var(--flat-soft); color: var(--flat); }
+.sig-mini .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 2px; }
+.sig-mini .stat-s { display: flex; flex-direction: column; gap: 1px; }
+.sig-mini .stat-s .v { font-size: 13px; font-weight: 500; font-family: var(--font-data); }
+.sig-mini .stat-s .n { font-size: 10px; color: var(--muted); }
+
+/* detail signal card */
 .signal { gap: 14px; }
 .verdict { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .verdict .word { font-size: 34px; font-weight: 600; line-height: 1.1; }
@@ -124,13 +142,24 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .vote.flat { background: var(--flat-soft); color: var(--flat); }
 .caution { font-size: 13px; color: var(--flat); }
 
-.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--bg); border-radius: 10px; padding: 4px; }
+/* stats row */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat .v { font-size: 16px; font-weight: 500; }
+.stat .n { font-size: 12px; color: var(--muted); }
+
+/* segment controls */
+.seg { display: grid; gap: 4px; background: var(--bg); border-radius: 10px; padding: 4px; }
+.seg.two { grid-template-columns: repeat(2, 1fr); }
+.seg.three { grid-template-columns: repeat(3, 1fr); }
 .seg button { border: 0; background: transparent; border-radius: 7px; padding: 8px 4px; font-size: 14px; cursor: pointer; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
 
+/* chart */
 .chart-wrap { overflow-x: auto; }
 svg { display: block; width: 100%; height: auto; min-width: 300px; }
 .grid { stroke: var(--line); stroke-width: 1; fill: none; }
+.grid.dash { stroke-dasharray: 3 3; }
 .tick { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
 .l-price { stroke: var(--fg); stroke-width: 1.6; fill: none; stroke-linejoin: round; }
 .l-ma50 { stroke: var(--accent); stroke-width: 1.4; fill: none; }
@@ -141,18 +170,12 @@ svg { display: block; width: 100%; height: auto; min-width: 300px; }
 .legend .a::before { border-color: var(--fg); }
 .legend .b::before { border-color: var(--accent); }
 .legend .c::before { border-color: var(--flat); border-top-style: dashed; }
+.legend .fr::before { border-color: #a855f7; border-top-style: dashed; }
+.legend .fe::before { border-color: #f97316; border-top-style: dashed; }
+.legend .sf::before { border-color: #ef4444; border-top-style: dashed; }
+.legend .sa::before { border-color: #f97316; border-top-style: dotted; }
 
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.stat .v { font-size: 16px; font-weight: 500; }
-.stat .n { font-size: 12px; color: var(--muted); }
-
-.foot { color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 10px; }
-.live { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 500; }
-.live[disabled] { opacity: 0.6; cursor: default; }
-#liveMsg { min-height: 1.5em; }
-
-.seg.two { grid-template-columns: repeat(2, 1fr); }
+/* candle */
 .cu { fill: var(--up); stroke: var(--up); stroke-width: 1; }
 .cd { fill: var(--down); stroke: var(--down); stroke-width: 1; }
 rect.cu, rect.cd { stroke: none; }
@@ -163,28 +186,99 @@ rect.cu, rect.cd { stroke: none; }
 .tagtxt { fill: var(--bg); font-family: var(--font-data); font-size: 10px; font-weight: 500; }
 .ptitle { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
 .panel { fill: none; stroke: var(--line); stroke-width: 1; }
-.grid.dash { stroke-dasharray: 3 3; }
 .l-rsi { stroke: var(--accent); stroke-width: 1.3; fill: none; }
+
+/* fibonacci */
+.fib-r { stroke: #a855f7; stroke-width: 0.8; fill: none; stroke-dasharray: 4 3; opacity: 0.7; }
+.fib-e { stroke: #f97316; stroke-width: 0.8; fill: none; stroke-dasharray: 2 3; opacity: 0.7; }
+.fib-0 { stroke: #94a3b8; stroke-width: 0.9; fill: none; opacity: 0.5; }
+.fib-lbl { font-family: var(--font-data); font-size: 9px; }
+.fib-lbl-r { fill: #a855f7; }
+.fib-lbl-e { fill: #f97316; }
+.fib-lbl-0 { fill: #94a3b8; }
+
+/* stop loss */
+.sl-fib  { stroke: #ef4444; stroke-width: 1.5; fill: none; stroke-dasharray: 6 3; }
+.sl-atr  { stroke: #f97316; stroke-width: 1.5; fill: none; stroke-dasharray: 2 2; }
+.sl-lbl  { font-family: var(--font-data); font-size: 9px; font-weight: 600; }
+.sl-lbl-fib { fill: #ef4444; }
+.sl-lbl-atr { fill: #f97316; }
+.sl-tag-fib { fill: #ef4444; }
+.sl-tag-atr { fill: #f97316; }
+.sl-tag-txt { fill: #ffffff; font-family: var(--font-data); font-size: 9px; font-weight: 600; }
+
+/* sl info card */
+.sl-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.sl-row  { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 13px; }
+.sl-dot  { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.sl-dot-fib { background: #ef4444; }
+.sl-dot-atr { background: #f97316; }
+.sl-name { color: var(--muted); font-size: 12px; }
+.sl-val  { font-family: var(--font-data); font-weight: 600; text-align: right; }
+.sl-val-fib { color: #ef4444; }
+.sl-val-atr { color: #f97316; }
+.sl-note { font-size: 12px; color: var(--muted); }
+
+/* footer */
+.foot { color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 10px; }
+.live { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 500; }
+.live[disabled] { opacity: 0.6; cursor: default; }
 </style>
 </head>
 <body>
 <main>
+
+  <!-- Header -->
   <header class="top">
     <div>
       <h1>ETH Signal</h1>
       <p class="sub">Ethereum · ราคาเป็น USD</p>
     </div>
-    <div class="pricebox"><p class="price num" id="price">–</p><p class="livestate" id="liveState" data-on="false" hidden></p></div>
+    <div class="pricebox">
+      <p class="price num" id="price">–</p>
+      <p class="livestate" id="liveState" data-on="false" hidden></p>
+    </div>
   </header>
 
+  <!-- Banner -->
   <p class="banner" id="banner" data-live="false">กำลังโหลดราคา ETH จริง...</p>
 
+  <!-- Dual signal summary -->
+  <div class="dual">
+    <!-- รายวัน -->
+    <div class="sig-mini flat" id="miniDay">
+      <p class="label">สัญญาณรายวัน</p>
+      <p class="word" id="dWord">–</p>
+      <p class="th" id="dTh">–</p>
+      <span class="pill num" id="dScore">–</span>
+      <div class="stats-row">
+        <div class="stat-s"><span class="v num" id="dRsi">–</span><span class="n">RSI</span></div>
+        <div class="stat-s"><span class="v num" id="dMacd">–</span><span class="n">MACD</span></div>
+        <div class="stat-s"><span class="v num" id="dGap">–</span><span class="n">ห่าง MA50</span></div>
+      </div>
+    </div>
+    <!-- 1 นาที -->
+    <div class="sig-mini flat" id="mini1m">
+      <p class="label">สัญญาณ 1 นาที</p>
+      <p class="word" id="mWord">–</p>
+      <p class="th" id="mTh">–</p>
+      <span class="pill num" id="mScore">–</span>
+      <div class="stats-row">
+        <div class="stat-s"><span class="v num" id="mRsi">–</span><span class="n">RSI</span></div>
+        <div class="stat-s"><span class="v num" id="mMacd">–</span><span class="n">MACD</span></div>
+        <div class="stat-s"><span class="v num" id="mGap">–</span><span class="n">ห่าง MA50</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart card with timeframe tabs -->
   <section class="card">
     <div class="seg two" role="group" aria-label="กรอบเวลา" id="tfSeg">
       <button type="button" data-tf="1m" aria-pressed="true">แท่งเทียน 1 นาที</button>
       <button type="button" data-tf="1d" aria-pressed="false">รายวัน</button>
     </div>
-    <div class="seg" hidden role="group" aria-label="เลือกสถานการณ์ตัวอย่าง" id="seg">
+    <!-- sample buttons for daily fallback -->
+    <div class="seg three" hidden role="group" aria-label="เลือกสถานการณ์ตัวอย่าง" id="seg">
       <button type="button" data-k="up" aria-pressed="true">ขาขึ้น</button>
       <button type="button" data-k="side" aria-pressed="false">แกว่งตัว</button>
       <button type="button" data-k="down" aria-pressed="false">ขาลง</button>
@@ -193,7 +287,8 @@ rect.cu, rect.cd { stroke: none; }
     <div class="legend" id="legend"></div>
   </section>
 
-  <section class="card signal" id="signalCard" aria-live="polite">
+  <!-- Detail signal card (for current timeframe) -->
+  <section class="card signal flat" id="signalCard" aria-live="polite">
     <p class="label" id="sigLabel">สัญญาณ</p>
     <div class="verdict">
       <div>
@@ -207,6 +302,7 @@ rect.cu, rect.cd { stroke: none; }
     <p class="changed" id="changed" hidden></p>
   </section>
 
+  <!-- Stats row (current timeframe) -->
   <section class="card">
     <div class="stats">
       <div class="stat"><span class="v num" id="sRsi">–</span><span class="n">RSI (14)</span></div>
@@ -215,10 +311,27 @@ rect.cu, rect.cd { stroke: none; }
     </div>
   </section>
 
+  <!-- Stop Loss card -->
+  <section class="sl-card" id="slCard">
+    <p class="label">Stop Loss อ้างอิง</p>
+    <div class="sl-row">
+      <div class="sl-dot sl-dot-fib"></div>
+      <span class="sl-name">Fib SL — ใต้ swing low (0%)</span>
+      <span class="sl-val sl-val-fib" id="slFibVal">–</span>
+    </div>
+    <div class="sl-row">
+      <div class="sl-dot sl-dot-atr"></div>
+      <span class="sl-name">ATR SL — ราคาปัจจุบัน − 1.5×ATR(14)</span>
+      <span class="sl-val sl-val-atr" id="slAtrVal">–</span>
+    </div>
+    <p class="sl-note" id="slNote">–</p>
+  </section>
+
   <section class="foot">
-    <p>สัญญาณคำนวณจากกฎตายตัว 4 ข้อ (เฉลี่ย 50/200 แท่ง, ราคาเทียบเฉลี่ย 50 แท่ง, RSI, MACD) ข้อละ +1 / 0 / −1 บนกรอบเวลาที่เลือก กราฟ 1 นาทีแกว่งและเปลี่ยนสัญญาณบ่อยกว่ารายวันมาก ใช้ประกอบการตัดสินใจเท่านั้น ไม่ใช่คำแนะนำซื้อขาย</p>
+    <p>สัญญาณคำนวณจากกฎตายตัว 4 ข้อ (เฉลี่ย 50/200 แท่ง, ราคาเทียบเฉลี่ย 50 แท่ง, RSI, MACD) ข้อละ +1 / 0 / −1 กราฟ 1 นาทีแกว่งและเปลี่ยนสัญญาณบ่อยกว่ารายวันมาก ใช้ประกอบการตัดสินใจเท่านั้น ไม่ใช่คำแนะนำซื้อขาย</p>
     <button type="button" class="live" id="liveBtn">รีเฟรชข้อมูล</button>
   </section>
+
 </main>
 
 <script>
@@ -226,7 +339,7 @@ rect.cu, rect.cd { stroke: none; }
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
 
-  /* ---------- sample data (daily view only, used when real data cannot load) ---------- */
+  /* ---------- sample data ---------- */
   function mulberry32(a) {
     return function () {
       a |= 0; a = (a + 0x6D2B79F5) | 0;
@@ -326,7 +439,8 @@ rect.cu, rect.cd { stroke: none; }
     if (rsi >= 70) caution = "ระวัง: RSI สูงกว่า 70 ราคาอาจขึ้นมาเร็วเกินไปและพักตัวได้";
     else if (rsi <= 30) caution = "ระวัง: RSI ต่ำกว่า 30 ราคาอาจลงมาเร็วเกินไปและเด้งกลับได้";
     return {
-      last: last, ma50: ma50, ma200: ma200, rsi: rsi, hist: hist, votes: votes, score: score, kind: kind, caution: caution,
+      last: last, ma50: ma50, ma200: ma200, rsi: rsi, hist: hist,
+      votes: votes, score: score, kind: kind, caution: caution,
       ser: { s50: s50, s200: s200, rsi: rs, hist: hs }
     };
   }
@@ -340,12 +454,52 @@ rect.cu, rect.cd { stroke: none; }
   var lastKind = { "1m": null, "1d": null };
   var pending = false;
   var CACHE_KEY = "eth-signal-cache-v1";
-
   var LABELS = {
     up: ["Bullish", "สัญญาณเอนไปทางขาขึ้น"],
     down: ["Bearish", "สัญญาณเอนไปทางขาลง"],
     flat: ["Neutral", "สัญญาณยังไม่ชัด"]
   };
+
+  /* ---------- dual mini-signal cards ---------- */
+  function renderMini(elId, wordId, thId, scoreId, rsiId, macdId, gapId, a) {
+    var el = $(elId);
+    el.className = "sig-mini " + a.kind;
+    $(wordId).textContent = LABELS[a.kind][0];
+    $(thId).textContent = LABELS[a.kind][1];
+    $(scoreId).textContent = signed(a.score) + " / 4";
+    $(rsiId).textContent = a.rsi.toFixed(1);
+    $(macdId).textContent = (a.hist >= 0 ? "+" : "−") + Math.abs(a.hist).toFixed(2);
+    var gap = (a.last / a.ma50 - 1) * 100;
+    $(gapId).textContent = (gap >= 0 ? "+" : "−") + Math.abs(gap).toFixed(1) + "%";
+  }
+  function renderMiniEmpty(elId, wordId, thId, scoreId, rsiId, macdId, gapId, msg) {
+    var el = $(elId);
+    el.className = "sig-mini flat";
+    $(wordId).textContent = "–";
+    $(thId).textContent = msg;
+    $(scoreId).textContent = "–";
+    $(rsiId).textContent = "–";
+    $(macdId).textContent = "–";
+    $(gapId).textContent = "–";
+  }
+  function updateDualCards() {
+    // Daily card
+    var dArr = daily || (sampleMode ? simulate(sampleKind) : null);
+    if (dArr && dArr.length >= 250) {
+      renderMini("miniDay", "dWord", "dTh", "dScore", "dRsi", "dMacd", "dGap", analyze(dArr, "วัน"));
+    } else {
+      renderMiniEmpty("miniDay", "dWord", "dTh", "dScore", "dRsi", "dMacd", "dGap",
+        loading.d ? "กำลังโหลด..." : "ยังไม่มีข้อมูล");
+    }
+    // 1-minute card
+    if (minute && minute.length >= 210) {
+      var closes = minute.map(function (c) { return c.c; });
+      renderMini("mini1m", "mWord", "mTh", "mScore", "mRsi", "mMacd", "mGap", analyze(closes, "แท่ง"));
+    } else {
+      renderMiniEmpty("mini1m", "mWord", "mTh", "mScore", "mRsi", "mMacd", "mGap",
+        loading.m ? "กำลังโหลด..." : "ยังไม่มีข้อมูล");
+    }
+  }
 
   /* ---------- drawing ---------- */
   function niceTicks(lo, hi) {
@@ -361,7 +515,105 @@ rect.cu, rect.cd { stroke: none; }
     return new Date(sec * 1000).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
   }
 
-  function drawLine(prices, ser, unit) {
+  /* ---------- stop loss ---------- */
+  function calcATR(candles, n) {
+    /* คำนวณ ATR(n) จาก candle array [{h,l,c}] */
+    if (candles.length < 2) return 0;
+    var trs = [];
+    for (var i = 1; i < candles.length; i++) {
+      var prevC = candles[i - 1].c;
+      var tr = Math.max(
+        candles[i].h - candles[i].l,
+        Math.abs(candles[i].h - prevC),
+        Math.abs(candles[i].l - prevC)
+      );
+      trs.push(tr);
+    }
+    /* Wilder smoothing */
+    var atr = trs.slice(0, n).reduce(function (a, b) { return a + b; }, 0) / n;
+    for (var j = n; j < trs.length; j++) atr = (atr * (n - 1) + trs[j]) / n;
+    return atr;
+  }
+
+  function calcATRFromPrices(prices, n) {
+    /* สร้าง pseudo-candle จากราคาปิดรายวัน (high=low=close) */
+    var candles = prices.map(function (p) { return { h: p, l: p, c: p }; });
+    return calcATR(candles, n);
+  }
+
+  function calcSL(fib, currentPrice, atr) {
+    /* Fib SL: ใต้ swing low 0.3% (buffer เล็กน้อยเพื่อหลีกเลี่ยง whipsaw) */
+    var fibSL = fib.lo * 0.997;
+    /* ATR SL: ราคาปัจจุบัน − 1.5×ATR */
+    var atrSL = currentPrice - 1.5 * atr;
+    /* ใช้ค่าที่ต่ำกว่า (conservative) เป็น recommended SL */
+    var recommended = Math.min(fibSL, atrSL);
+    return { fibSL: fibSL, atrSL: atrSL, recommended: recommended };
+  }
+
+  function updateSLCard(fib, currentPrice, atr, unit) {
+    var sl = calcSL(fib, currentPrice, atr);
+    $("slFibVal").textContent = "$" + fmt(sl.fibSL, 2);
+    $("slAtrVal").textContent = "$" + fmt(sl.atrSL, 2);
+    var dist = ((currentPrice - sl.recommended) / currentPrice * 100).toFixed(1);
+    var closer = sl.fibSL < sl.atrSL ? "Fib" : "ATR";
+    $("slNote").textContent =
+      "SL ที่แนะนำ: $" + fmt(sl.recommended, 2) +
+      " (ห่าง " + dist + "% จากราคาปัจจุบัน · ใช้ " + closer + " SL)" +
+      " · ATR(" + unit + ")=" + fmt(atr, 2);
+    return sl;
+  }
+
+  /* ---------- fibonacci ---------- */
+  var FIB_R = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+  var FIB_E = [1.272, 1.618];
+
+  function calcFib(prices) {
+    /* หา swing high และ swing low จากข้อมูลทั้งหมดที่แสดงในกราฟ */
+    var hi = -Infinity, lo = Infinity, hiIdx = 0, loIdx = 0;
+    for (var i = 0; i < prices.length; i++) {
+      if (prices[i] > hi) { hi = prices[i]; hiIdx = i; }
+      if (prices[i] < lo) { lo = prices[i]; loIdx = i; }
+    }
+    /* ทิศทาง: ถ้า high อยู่หลัง low → uptrend (ย้อนกลับจาก low→high)
+       ถ้า low อยู่หลัง high → downtrend (ย้อนกลับจาก high→low) */
+    var uptrend = hiIdx > loIdx;
+    var swing = hi - lo;
+    var levels = {};
+    FIB_R.forEach(function (r) {
+      levels[r] = uptrend ? hi - r * swing : lo + r * swing;
+    });
+    FIB_E.forEach(function (r) {
+      levels[r] = uptrend ? lo - (r - 1) * swing : hi + (r - 1) * swing;
+    });
+    return { hi: hi, lo: lo, hiIdx: hiIdx, loIdx: loIdx, uptrend: uptrend, levels: levels };
+  }
+
+  function drawFibLines(s, fib, yFn, xL, xR, yMin, yMax) {
+    /* วาด retracement + extension สำหรับ drawLine (กราฟเส้นรายวัน)
+       label อยู่ที่ขอบซ้าย ถัดจาก tick ราคา */
+    FIB_R.forEach(function (r) {
+      var price = fib.levels[r];
+      var yy = yFn(price);
+      if (yy < yMin || yy > yMax) return;
+      var cls = (r === 0 || r === 1) ? "fib-0" : "fib-r";
+      var lblCls = (r === 0 || r === 1) ? "fib-lbl fib-lbl-0" : "fib-lbl fib-lbl-r";
+      var label = (r === 0 || r === 1) ? (r === 0 ? "0%" : "100%") : (r * 100).toFixed(1) + "%";
+      s += '<line class="' + cls + '" x1="' + xL + '" x2="' + xR + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>';
+      s += '<text class="' + lblCls + '" x="' + (xL + 2) + '" y="' + (yy - 1.5).toFixed(1) + '">' + label + '</text>';
+    });
+    FIB_E.forEach(function (r) {
+      var price = fib.levels[r];
+      var yy = yFn(price);
+      if (yy < yMin || yy > yMax) return;
+      var label = (r * 100).toFixed(1) + "%";
+      s += '<line class="fib-e" x1="' + xL + '" x2="' + xR + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>';
+      s += '<text class="fib-lbl fib-lbl-e" x="' + (xL + 2) + '" y="' + (yy - 1.5).toFixed(1) + '">' + label + '</text>';
+    });
+    return s;
+  }
+
+  function drawLine(prices, ser) {
     var svg = $("chart");
     svg.setAttribute("viewBox", "0 0 400 230");
     var N = Math.min(180, prices.length - 199), W = 400, H = 230, L = 44, R = 10, T = 10, B = 24;
@@ -386,13 +638,32 @@ rect.cu, rect.cd { stroke: none; }
       s += '<path class="grid" d="M' + L + " " + y(t).toFixed(1) + "H" + (W - R) + '"/>';
       s += '<text class="tick" x="' + (L - 6) + '" y="' + (y(t) + 3).toFixed(1) + '" text-anchor="end">' + fmt(t) + "</text>";
     });
-    s += '<text class="tick" x="' + L + '" y="' + (H - 6) + '" text-anchor="start">' + N + " " + unit + "ก่อน</text>";
+    s += '<text class="tick" x="' + L + '" y="' + (H - 6) + '" text-anchor="start">' + N + ' วันก่อน</text>';
     s += '<text class="tick" x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">ล่าสุด</text>';
+    /* fibonacci lines (วาดก่อน MA และราคา เพื่อให้อยู่ใต้) */
+    var fib = calcFib(p);
+    s = drawFibLines(s, fib, y, L, W - R, T, H - B);
+
     s += '<path class="l-ma200" d="' + path(m200) + '"/>';
     s += '<path class="l-ma50" d="' + path(m50) + '"/>';
     s += '<path class="l-price" d="' + path(p) + '"/>';
     s += '<circle class="end-dot" cx="' + x(N - 1).toFixed(1) + '" cy="' + y(p[N - 1]).toFixed(1) + '" r="3.5"/>';
+
+    /* stop loss lines */
+    var atrD = calcATRFromPrices(prices, 14);
+    var slD = calcSL(fib, p[p.length - 1], atrD);
+    var slLines = [
+      { price: slD.fibSL, cls: "sl-fib", lblCls: "sl-lbl sl-lbl-fib", tagCls: "sl-tag-fib", label: "SL·Fib" },
+      { price: slD.atrSL, cls: "sl-atr", lblCls: "sl-lbl sl-lbl-atr", tagCls: "sl-tag-atr", label: "SL·ATR" }
+    ];
+    slLines.forEach(function (sl) {
+      var yy = y(sl.price);
+      if (yy < T || yy > H - B) return;
+      s += '<line class="' + sl.cls + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>';
+      s += '<text class="' + sl.lblCls + '" x="' + (L + 2) + '" y="' + (yy - 2).toFixed(1) + '">' + sl.label + '</text>';
+    });
     svg.innerHTML = s;
+    return slD;
   }
 
   function drawCandles(cs, ser) {
@@ -435,7 +706,27 @@ rect.cu, rect.cd { stroke: none; }
       }
       return d;
     };
-    s += '<g clip-path="url(#cm)"><path class="l-ma200" d="' + maPath(ser.s200) + '"/><path class="l-ma50" d="' + maPath(ser.s50) + '"/>';
+    /* fibonacci lines inside clip (เส้น) + outside clip (label) */
+    var closes1m = cs.slice(st).map(function (c) { return c.c; });
+    var fib1m = calcFib(closes1m);
+    /* วาดเส้น fib ใน clip group ก่อน candles */
+    var fibLineStr = "";
+    FIB_R.forEach(function (r) {
+      var price = fib1m.levels[r];
+      var yy = Y(price);
+      if (yy < yT - 2 || yy > yB + 2) return; /* ข้ามถ้านอกกราฟ */
+      var cls = (r === 0 || r === 1) ? "fib-0" : "fib-r";
+      fibLineStr += '<line class="' + cls + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>';
+    });
+    FIB_E.forEach(function (r) {
+      var price = fib1m.levels[r];
+      var yy = Y(price);
+      if (yy < yT - 2 || yy > yB + 2) return;
+      fibLineStr += '<line class="fib-e" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>';
+    });
+
+    s += '<g clip-path="url(#cm)">' + fibLineStr;
+    s += '<path class="l-ma200" d="' + maPath(ser.s200) + '"/><path class="l-ma50" d="' + maPath(ser.s50) + '"/>';
     for (i = st; i < cs.length; i++) {
       var c = cs[i], cx = X(i - st), up = c.c >= c.o, cls = up ? "cu" : "cd";
       var yo = Y(c.o), yc = Y(c.c), top = Math.min(yo, yc), bh = Math.max(1, Math.abs(yo - yc));
@@ -444,11 +735,42 @@ rect.cu, rect.cd { stroke: none; }
     }
     s += "</g>";
 
+    /* fib labels นอก clip (วางซ้ายของแกน Y ด้านซ้ายสุด เพื่อไม่ชนกับ tag ราคา) */
+    var fibLblStr = "";
+    FIB_R.concat(FIB_E).forEach(function (r) {
+      var price = fib1m.levels[r];
+      var yy = Y(price);
+      if (yy < yT || yy > yB) return;
+      var isExt = FIB_E.indexOf(r) >= 0;
+      var isEdge = (r === 0 || r === 1);
+      var lblCls = isExt ? "fib-lbl fib-lbl-e" : (isEdge ? "fib-lbl fib-lbl-0" : "fib-lbl fib-lbl-r");
+      var label = isEdge ? (r === 0 ? "0%" : "100%") : (r * 100).toFixed(1) + "%";
+      fibLblStr += '<text class="' + lblCls + '" x="' + (L + 2) + '" y="' + (yy - 1.5).toFixed(1) + '">' + label + '</text>';
+    });
+    s += fibLblStr;
+
     var lastC = cs[cs.length - 1], yl = Y(lastC.c);
     s += '<path class="lastline" d="M' + L + " " + yl.toFixed(1) + "H" + (W - R) + '"/>';
     var ty = Math.min(yB - 7, Math.max(yT + 7, yl));
     s += '<rect class="' + (lastC.c >= lastC.o ? "tag-up" : "tag-dn") + '" x="' + (W - R + 1) + '" y="' + (ty - 7).toFixed(1) + '" width="' + (R - 3) + '" height="14" rx="2"/>';
     s += '<text class="tagtxt" x="' + (W - R + 1 + (R - 3) / 2) + '" y="' + (ty + 3.5).toFixed(1) + '" text-anchor="middle">' + fmt(lastC.c, 2) + "</text>";
+
+    /* stop loss lines — วาดบน main chart area */
+    var atr1m = calcATR(cs.slice(st), 14);
+    var sl1m = calcSL(fib1m, lastC.c, atr1m);
+    var slDefs = [
+      { price: sl1m.fibSL, cls: "sl-fib", lblCls: "sl-lbl sl-lbl-fib", label: "SL·Fib" },
+      { price: sl1m.atrSL, cls: "sl-atr", lblCls: "sl-lbl sl-lbl-atr", label: "SL·ATR" }
+    ];
+    slDefs.forEach(function (sl) {
+      var yy = Y(sl.price);
+      if (yy < yT || yy > yB) return;
+      s += '<line class="' + sl.cls + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>';
+      /* tag ที่ขอบขวา */
+      var tagY = Math.min(yB - 7, Math.max(yT + 7, yy));
+      s += '<rect class="' + (sl.cls === "sl-fib" ? "sl-tag-fib" : "sl-tag-atr") + '" x="' + (W - R + 1) + '" y="' + (tagY - 7).toFixed(1) + '" width="' + (R - 3) + '" height="13" rx="2"/>';
+      s += '<text class="sl-tag-txt" x="' + (W - R + 1 + (R - 3) / 2) + '" y="' + (tagY + 2.5).toFixed(1) + '" text-anchor="middle">' + sl.label + '</text>';
+    });
 
     for (i = 7; i < N; i += 15) {
       s += '<text class="tick" x="' + X(i).toFixed(1) + '" y="' + (yB + 14) + '" text-anchor="middle">' + hhmm(cs[st + i].t) + "</text>";
@@ -517,7 +839,7 @@ rect.cu, rect.cd { stroke: none; }
     var gap = (a.last / a.ma50 - 1) * 100;
     $("sGap").textContent = (gap >= 0 ? "+" : "−") + Math.abs(gap).toFixed(2) + "%";
     $("sGapLbl").textContent = "ห่างเฉลี่ย 50 " + unit;
-    $("sigLabel").textContent = tf === "1m" ? "สัญญาณกราฟ 1 นาที" : "สัญญาณรายวัน";
+    $("sigLabel").textContent = tf === "1m" ? "รายละเอียดสัญญาณ 1 นาที" : "รายละเอียดสัญญาณรายวัน";
   }
 
   function renderEmpty(msg) {
@@ -532,6 +854,11 @@ rect.cu, rect.cd { stroke: none; }
     $("chart").innerHTML = '<text class="tick" x="200" y="64" text-anchor="middle" style="font-size:12px">' + msg + "</text>";
   }
 
+  var LEG = {
+    "1m": '<span class="a">แท่งเทียน</span><span class="b">MA 50</span><span class="c">MA 200</span><span class="fr">Fib</span><span class="sf">SL·Fib</span><span class="sa">SL·ATR</span>',
+    "1d": '<span class="a">ราคา</span><span class="b">MA 50 วัน</span><span class="c">MA 200 วัน</span><span class="fr">Fib</span><span class="sf">SL·Fib</span><span class="sa">SL·ATR</span>'
+  };
+
   function redraw() {
     var kind = null;
     var head = minute && minute.length ? minute[minute.length - 1].c : (daily ? daily[daily.length - 1] : 0);
@@ -541,20 +868,31 @@ rect.cu, rect.cd { stroke: none; }
         var a = analyze(closes, "แท่ง");
         renderSignal(a, "แท่ง");
         drawCandles(minute, a.ser);
+        /* อัปเดต SL card: ใช้ข้อมูลจาก fib และ ATR ของ 1 นาที */
+        var fib1mSL = calcFib(minute.slice(minute.length - Math.min(60, minute.length)).map(function(c){ return c.c; }));
+        var atr1mSL = calcATR(minute.slice(Math.max(0, minute.length - 60)), 14);
+        updateSLCard(fib1mSL, minute[minute.length-1].c, atr1mSL, "1m");
         kind = a.kind;
       } else {
         renderEmpty(loading.m ? "กำลังโหลดกราฟ 1 นาที..." : "ยังไม่มีข้อมูลกราฟ 1 นาที");
+        $("slFibVal").textContent = "–"; $("slAtrVal").textContent = "–"; $("slNote").textContent = "–";
       }
     } else {
       var arr = daily || (sampleMode ? simulate(sampleKind) : null);
       if (arr && arr.length >= 250) {
         var a2 = analyze(arr, "วัน");
         renderSignal(a2, "วัน");
-        drawLine(arr, a2.ser, "วัน");
+        drawLine(arr, a2.ser);
+        /* อัปเดต SL card: ใช้ข้อมูลจาก fib และ ATR รายวัน */
+        var pSlice = arr.slice(Math.max(0, arr.length - 180));
+        var fibDSL = calcFib(pSlice);
+        var atrDSL = calcATRFromPrices(arr, 14);
+        updateSLCard(fibDSL, arr[arr.length-1], atrDSL, "วัน");
         kind = a2.kind;
         if (!head) head = a2.last;
       } else {
         renderEmpty(loading.d ? "กำลังโหลดข้อมูลรายวัน..." : "ยังไม่มีข้อมูลรายวัน");
+        $("slFibVal").textContent = "–"; $("slAtrVal").textContent = "–"; $("slNote").textContent = "–";
       }
     }
     setPrice(head);
@@ -583,10 +921,6 @@ rect.cu, rect.cd { stroke: none; }
     bn.textContent = txt;
   }
 
-  var LEG = {
-    "1m": '<span class="a">แท่งเทียน (เขียว = ขึ้น, แดง = ลง)</span><span class="b">เฉลี่ย 50 แท่ง</span><span class="c">เฉลี่ย 200 แท่ง</span>',
-    "1d": '<span class="a">ราคา</span><span class="b">เฉลี่ย 50 วัน</span><span class="c">เฉลี่ย 200 วัน</span>'
-  };
   function view() {
     Array.prototype.forEach.call($("tfSeg").querySelectorAll("button"), function (b) {
       b.setAttribute("aria-pressed", b.getAttribute("data-tf") === tf ? "true" : "false");
@@ -594,6 +928,7 @@ rect.cu, rect.cd { stroke: none; }
     $("legend").innerHTML = LEG[tf];
     $("seg").hidden = !(tf === "1d" && !daily && sampleMode);
     $("liveState").hidden = !(minute || dailyLive);
+    updateDualCards();
     redraw();
     updateBanner();
   }
@@ -616,6 +951,7 @@ rect.cu, rect.cd { stroke: none; }
       x.setAttribute("aria-pressed", x === b ? "true" : "false");
     });
     redraw();
+    updateDualCards();
   });
 
   /* ---------- real data ---------- */
@@ -760,6 +1096,7 @@ rect.cu, rect.cd { stroke: none; }
   setInterval(function () {
     if (!pending) return;
     pending = false;
+    updateDualCards();
     var k = redraw();
     if (k && lastKind[tf] && k !== lastKind[tf]) {
       var ch = $("changed");
